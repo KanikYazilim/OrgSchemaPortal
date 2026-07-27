@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="OrgSchema.Api/OrgSchema.Api.csproj" />
+  <Project Path="OrgSchema.UI/OrgSchema.UI.csproj" />
+</Solution>

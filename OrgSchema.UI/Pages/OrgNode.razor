@@ -1,0 +1,31 @@
+@using OrgSchema.UI.Models
+
+<div class="org-node level-@Level">
+    <div class="card">
+        <div class="card-content">
+            <span class="title">@Employee.Title</span>
+            <span class="name">@Employee.FullName</span>
+        </div>
+    </div>
+    
+    @if (Employee.Subordinates.Any())
+    {
+        // SAĞA KAYMAYI KESİN OLARAK ENGELLEYEN KURAL:
+        // Eğer bu personel 3. Kademe (Müdür, Şef vs) veya daha altındaysa, 
+        // altındaki herkesi KESİNLİKLE dikey (hanging) olarak aşağı sarkıt!
+        // (Sadece Yönetim Kurulu ve Genel Müdür seviyesi yatay açılır)
+        bool shouldHang = Level >= 2;
+        
+        <div class="children @(shouldHang ? "hanging" : "horizontal")">
+            @foreach (var sub in Employee.Subordinates)
+            {
+                <OrgNode Employee="sub" Level="@(Level + 1)" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public EmployeeDto Employee { get; set; } = new();
+    [Parameter] public int Level { get; set; } = 1;
+}

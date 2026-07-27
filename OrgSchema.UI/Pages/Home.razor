@@ -1,0 +1,249 @@
+@page "/"
+@using OrgSchema.UI.Models
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Kanik Şirketler Grubu Portal</PageTitle>
+
+<div class="header-tabs">
+    <div class="tab @(activeTab == "OrgChart" ? "active" : "")" @onclick='() => SwitchTab("OrgChart")'>
+        <span class="icon">🗂️</span> Organizasyon Şeması
+    </div>
+    <div class="tab @(activeTab == "Consult" ? "active" : "")" @onclick='() => SwitchTab("Consult")'>
+        <span class="icon">❓</span> Kime Danışabilirim
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="loading-container">
+        <p style="color: red; max-width: 600px; text-align: center;">@errorMessage</p>
+    </div>
+}
+else if (orgNodes == null || allEmployees == null)
+{
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Veriler yükleniyor...</p>
+    </div>
+}
+else if (!orgNodes.Any())
+{
+    <div class="loading-container">
+        <p>Gösterilecek organizasyon verisi bulunamadı.</p>
+    </div>
+}
+else
+{
+    <!-- ORGANİZASYON ŞEMASI SEKMESİ -->
+    <div style="display: @(activeTab == "OrgChart" ? "block" : "none")">
+        <div class="header-container">
+            <h1><span class="purple-text">Kurumsal</span> Organizasyon Şeması</h1>
+            <p class="hint">💡 Şemayı farenizle sürükleyebilir ve tekerlek (mouse wheel) ile istediğiniz bölgeye yakınlaşabilirsiniz.</p>
+        </div>
+
+        <div id="org-wrapper" class="org-chart-wrapper">
+            <div id="org-container" class="org-chart-container">
+                @foreach (var node in orgNodes)
+                {
+                    <OrgNode Employee="node" Level="1" />
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- KİME DANIŞABİLİRİM SEKMESİ -->
+    <div style="display: @(activeTab == "Consult" ? "block" : "none")">
+        
+        <div class="consult-columns-wrapper">
+            <!-- 1. Firma Kolonu -->
+            <div class="consult-col">
+                <h3 class="col-title">Firma</h3>
+                <div class="col-list">
+                    @foreach (var firma in GetFirms())
+                    {
+                        <div class="col-item @(selectedFirm == firma ? "active" : "")" @onclick="() => SelectFirm(firma)">
+                            @firma
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 2. Departmanlar Kolonu -->
+            <div class="consult-col">
+                <h3 class="col-title">Departmanlar</h3>
+                <div class="col-list">
+                    @if (!string.IsNullOrEmpty(selectedFirm))
+                    {
+                        @foreach (var dept in GetDepartments(selectedFirm))
+                        {
+                            <div class="col-item @(selectedDept == dept ? "active" : "")" @onclick="() => SelectDept(dept)">
+                                @dept
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- 3. Birimler Kolonu -->
+            <div class="consult-col">
+                <h3 class="col-title">Birimler</h3>
+                <div class="col-list">
+                    @if (!string.IsNullOrEmpty(selectedDept))
+                    {
+                        @foreach (var unit in GetUnits(selectedFirm, selectedDept))
+                        {
+                            <div class="col-item @(selectedUnit == unit ? "active" : "")" @onclick="() => SelectUnit(unit)">
+                                @unit
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Sonuç (Kişiler) Listesi -->
+        @if (!string.IsNullOrEmpty(selectedUnit))
+        {
+            <div class="consult-results">
+                <h3>@selectedUnit Birimi Yetkilileri</h3>
+                <div class="results-grid">
+                    @foreach (var person in GetPeopleInUnit(selectedFirm, selectedDept, selectedUnit))
+                    {
+                        <div class="person-card">
+                            <div class="person-avatar">@GetInitials(person.FullName)</div>
+                            <div class="person-info">
+                                <h4>@person.FullName</h4>
+                                <span class="p-title">@person.Title</span>
+                                <span class="p-email">📧 @person.Email</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<EmployeeDto>? orgNodes;
+    private List<EmployeeDto>? allEmployees;
+    private string activeTab = "OrgChart";
+    private string? errorMessage;
+
+    private string? selectedFirm;
+    private string? selectedDept;
+    private string? selectedUnit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            // Orijinal hiyerarşik ağaç verisi (OrgChart için)
+            orgNodes = await Http.GetFromJsonAsync<List<EmployeeDto>>("http://localhost:5009/api/orgchart");
+            
+            // "Kime Danışabilirim" ekranında düz (flat) listeye ihtiyacımız var, hiyerarşiden flat liste çıkartıyoruz
+            allEmployees = new List<EmployeeDto>();
+            if (orgNodes != null)
+            {
+                // Root düğümleri açık gelsin
+                foreach (var root in orgNodes)
+                {
+                    root.IsExpanded = true;
+                }
+                
+                FlattenTree(orgNodes, allEmployees);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "API'ye bağlanırken veya veritabanından veri çekerken bir hata oluştu. Lütfen API terminalindeki (siyah ekran) kırmızı hata mesajlarını kontrol edin. Hata detayı: " + ex.Message;
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private void FlattenTree(IEnumerable<EmployeeDto> nodes, List<EmployeeDto> result)
+    {
+        foreach (var node in nodes)
+        {
+            result.Add(node);
+            if (node.Subordinates != null && node.Subordinates.Any())
+            {
+                FlattenTree(node.Subordinates, result);
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && orgNodes != null)
+        {
+            await JSRuntime.InvokeVoidAsync("orgChartFunctions.initZoomPan", "org-wrapper", "org-container");
+        }
+    }
+
+    private async Task SwitchTab(string tabName)
+    {
+        activeTab = tabName;
+        StateHasChanged();
+
+        // OrgChart'a geri dönerse JS Pan/Zoom'u tekrar başlat (DOM değiştiği için)
+        if (tabName == "OrgChart" && orgNodes != null)
+        {
+            await Task.Delay(100); // DOM render'ı bekle
+            await JSRuntime.InvokeVoidAsync("orgChartFunctions.initZoomPan", "org-wrapper", "org-container");
+        }
+    }
+
+    // --- Kime Danışabilirim Filtreleme Mantığı ---
+    private void SelectFirm(string firm)
+    {
+        selectedFirm = firm;
+        selectedDept = null;
+        selectedUnit = null;
+    }
+
+    private void SelectDept(string dept)
+    {
+        selectedDept = dept;
+        selectedUnit = null;
+    }
+
+    private void SelectUnit(string unit)
+    {
+        selectedUnit = unit;
+    }
+
+    private IEnumerable<string> GetFirms()
+    {
+        return allEmployees!.Where(x => !string.IsNullOrEmpty(x.Company)).Select(x => x.Company).Distinct().OrderBy(x => x);
+    }
+
+    private IEnumerable<string> GetDepartments(string firm)
+    {
+        return allEmployees!.Where(x => x.Company == firm && !string.IsNullOrEmpty(x.Department))
+                            .Select(x => x.Department).Distinct().OrderBy(x => x);
+    }
+
+    private IEnumerable<string> GetUnits(string firm, string dept)
+    {
+        return allEmployees!.Where(x => x.Company == firm && x.Department == dept && !string.IsNullOrEmpty(x.Unit))
+                            .Select(x => x.Unit).Distinct().OrderBy(x => x);
+    }
+
+    private IEnumerable<EmployeeDto> GetPeopleInUnit(string firm, string dept, string unit)
+    {
+        // Yönetici (Manager) unvanı geçenler veya yetkili kişiler üste gelsin diye bir sıralama yapılabilir
+        return allEmployees!.Where(x => x.Company == firm && x.Department == dept && x.Unit == unit)
+                            .OrderByDescending(x => x.Title.Contains("Müdür") || x.Title.Contains("Yönetici"))
+                            .ThenBy(x => x.FullName);
+    }
+
+    private string GetInitials(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+    }
+}
