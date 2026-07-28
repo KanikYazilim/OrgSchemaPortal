@@ -17,218 +17,142 @@ public class OrgService : IOrgService
         _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "";
     }
 
-    public async Task<List<EmployeeDto>> GetProcessedOrganizationChartAsync()
+    public async Task<List<OrgNodeDto>> GetProcessedOrganizationChartAsync()
     {
-        // 1. Dapper ile KisiKart2 Tablosundan Gerçek Veriyi Çek
         var rawData = await GetRealSapDataAsync();
+        
+        // Şimdilik Override tablosu ve HiddenOrganization tablosu boş varsayıyoruz, 
+        // veritabanına eklenince buraya entegre edilecek. (O(1) Merge Algoritması)
+        var finalData = rawData; // İleride Merge(rawData, overrides) olacak
 
-        // 2. Bakım Tablosundaki Kuralları Çek
-        List<OrgOverrideRule> rules = new();
-        try 
-        {
-            rules = await _dbContext.Org_OverrideRules.Where(r => r.IsActive && !r.IsDeleted).ToListAsync();
-        } 
-        catch 
-        {
-            // Eğer veritabanında tablolar henüz tam oluşmadıysa veya hata varsa boş kural döner
-            Console.WriteLine("Bakım tabloları okunamadı veya boş.");
-        }
-
-        // 3. Kuralları Uygula ve Tekilleştir (In-Memory Processing)
-        var processedData = ApplyRulesAndDeduplicate(rawData, rules);
-
-        // 4. Hiyerarşik Ağaç Yapısına Çevir
-        var tree = BuildTree(processedData);
-
-        // 5. İzin Verilmeyen Departmanları ve Kilit Olmayan Personelleri Buda
-        PruneTree(tree);
+        // Ağacı İnşa Et
+        var tree = BuildEnterpriseTree(finalData);
 
         return tree;
     }
 
-    private void PruneTree(List<EmployeeDto> nodes)
+    public async Task<List<FinalEmployeeDto>> GetFlatEmployeeListAsync()
     {
-        for (int i = nodes.Count - 1; i >= 0; i--)
-        {
-            var node = nodes[i];
-            
-            // Önce alt dalları buda
-            if (node.Subordinates.Any())
-            {
-                PruneTree(node.Subordinates);
-            }
-
-            // Alt dalları budandıktan sonra kendisine bağlı kimse kalmadıysa kontrol et:
-            if (!node.Subordinates.Any())
-            {
-                // Şirketin ana taşıyıcıları (CEO, Kurul, GM, Direktör) ASLA silinmez!
-                if (GetTitlePower(node.Title) >= 80) continue; 
-                // Sistem için açtığımız "Yöneticisi Atanmamış" sanal klasörü ASLA silinmez!
-                if (node.Id == "ORPHAN_ROOT") continue;
-
-                // Departman kısıtlamasını kaldırdık! 
-                // Çünkü önemli biri farklı/eksik isimli bir departmanda olabilir.
-                // Sadece kilit personel değilse (işçi, kurye, operatör vs) siliyoruz.
-                if (!IsKeyPersonnel(node.Title))
-                {
-                    nodes.RemoveAt(i);
-                }
-            }
-        }
+        var rawData = await GetRealSapDataAsync();
+        return rawData.OrderBy(x => x.NameSurname).ToList();
     }
 
-    private string NormalizeText(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return "";
-        return text
-            .Replace("İ", "I").Replace("i", "I")
-            .Replace("I", "I").Replace("ı", "I")
-            .Replace("Ş", "S").Replace("ş", "S")
-            .Replace("Ğ", "G").Replace("ğ", "G")
-            .Replace("Ü", "U").Replace("ü", "U")
-            .Replace("Ö", "O").Replace("ö", "O")
-            .Replace("Ç", "C").Replace("ç", "C")
-            .ToUpperInvariant();
-    }
-
-    private bool IsWhitelistedDepartment(string? dept)
-    {
-        if (string.IsNullOrWhiteSpace(dept)) return false;
-        var d = NormalizeText(dept);
-        string[] allowedKeywords = { 
-            "DIS TICARET", "HUKUK", "INSAN KAYNAKLARI", "MALI ISLER", "PAZARLAMA", "IS GELISTIRME",
-            "SATINALMA", "TEKNIK", "ASISTAN", "IDARI ISLER", "LOJISTIK", "SATIS", "URETIM VE BAKIM", 
-            "YONETIM", "FABRIKA", "IRC GENEL", "KALITE", "TEDARIK ZINCIRI", "SAP", 
-            "TEKNOLOJI", "YAZILIM", "DIJITAL", "YURTDISI", "YURTICI", "SEVKIYAT" 
-        };
-        return allowedKeywords.Any(k => d.Contains(k));
-    }
-
-    private bool IsKeyPersonnel(string? title)
-    {
-        if (string.IsNullOrWhiteSpace(title)) return false;
-        var t = NormalizeText(title);
-        string[] allowedKeywords = { 
-            "YONETIM", "CEO", "GENEL MUDUR", "CSO", "YARDIMCI", "YRD", 
-            "DIREKTOR", "MUDUR", "EKIP LIDERI", "DENETIM", "KURUL", "BASKAN"
-        };
-        return allowedKeywords.Any(k => t.Contains(k));
-    }
-
-    private int GetTitlePower(string? title)
-    {
-        if (string.IsNullOrWhiteSpace(title)) return 0;
-        var t = title.ToLower();
-        
-        if (t.Contains("yönetim kurulu") || t.Contains("ceo")) return 100;
-        if (t.Contains("genel müdür")) return 90;
-        if (t.Contains("direktör") || t.Contains("koordinatör") || t.Contains("başkan")) return 80;
-        if (t.Contains("müdür")) return 70;
-        if (t.Contains("şef")) return 60;
-        if (t.Contains("yönetici")) return 50;
-        if (t.Contains("uzman")) return 40;
-        if (t.Contains("sorumlu")) return 30;
-        if (t.Contains("yardımcı")) return 20;
-        if (t.Contains("temsilci")) return 10;
-        
-        return 0; // Standart personel
-    }
-
-
-
-    private async Task<List<EmployeeDto>> GetRealSapDataAsync()
+    private async Task<List<FinalEmployeeDto>> GetRealSapDataAsync()
     {
         var sql = @"
             SELECT 
-                LTRIM(RTRIM(CAST(SICILNO AS NVARCHAR(100)))) AS Id,
-                LTRIM(RTRIM(ENAME)) AS FullName,
+                LTRIM(RTRIM(CAST(SICILNO AS NVARCHAR(100)))) AS SicilNo,
+                LTRIM(RTRIM(ENAME)) AS NameSurname,
                 LTRIM(RTRIM(KMAIL)) AS Email,
-                LTRIM(RTRIM(POZISYONADI)) AS Title,
-                LTRIM(RTRIM(DEPARTMANFIRMAADI)) AS Department,
-                LTRIM(RTRIM(BIRIMADI)) AS Unit,
-                LTRIM(RTRIM(SICILFIRMAADI)) AS Company,
-                LTRIM(RTRIM(CAST(MANAGERSICILNO AS NVARCHAR(100)))) AS ManagerId
-            FROM KisiKart2
-            WHERE AKTIF = 1
+                LTRIM(RTRIM(POS)) AS PositionName,
+                LTRIM(RTRIM(DEP)) AS DepartmentId,
+                LTRIM(RTRIM(DEPAD)) AS DepartmentName,
+                LTRIM(RTRIM(BIRIM)) AS UnitId,
+                LTRIM(RTRIM(BIRIM)) AS UnitName,
+                LTRIM(RTRIM(SIRKET)) AS CompanyId,
+                LTRIM(RTRIM(SIRKET)) AS CompanyName,
+                LTRIM(RTRIM(MANAGER)) AS Manager,
+                LTRIM(RTRIM(CAST(MANAGERSICILNO AS NVARCHAR(100)))) AS ManagerSicilNo
+            FROM KisiKart
+            WHERE SICILNO IN (SELECT DISTINCT MANAGERSICILNO FROM KisiKart WHERE MANAGERSICILNO IS NOT NULL AND MANAGERSICILNO != '00000000')
         ";
 
         using var connection = new SqlConnection(_connectionString);
-        var result = await connection.QueryAsync<EmployeeDto>(sql);
-        return result.ToList();
-    }
-
-    private List<EmployeeDto> ApplyRulesAndDeduplicate(List<EmployeeDto> data, List<OrgOverrideRule> rules)
-    {
-        var result = new List<EmployeeDto>();
-
-        foreach (var item in data)
-        {
-            // Kullanıcı (Employee) gizleme kontrolü
-            var empRule = rules.FirstOrDefault(r => r.TargetType == "Employee" && r.TargetId == item.Id);
-            if (empRule?.ActionType == ActionType.Hide) continue;
-
-            // Departman/Birim kuralları
-            var deptRule = rules.FirstOrDefault(r => r.TargetType == "Department" && r.TargetId == item.Department);
-            if (deptRule != null)
-            {
-                if (deptRule.ActionType == ActionType.Hide) continue; 
-                if (deptRule.ActionType == ActionType.Rename && !string.IsNullOrEmpty(deptRule.NewName))
-                {
-                    item.Department = deptRule.NewName;
-                }
-            }
-            
-            result.Add(item);
-        }
-
-        // Akıllı Çalışan Tekilleştirme (Deduplication) - "Unvan Gücü" Algoritması
-        // Eğer bir kişinin birden fazla görevi varsa, unvan gücü en yüksek olanı asil kaydı kabul et!
-        var deduplicatedResult = result
-            .GroupBy(x => !string.IsNullOrWhiteSpace(x.Email) ? x.Email.Trim().ToLower() : x.Id)
-            .Select(g => 
-            {
-                // Gruptaki kayıtları Unvan Gücüne göre büyükten küçüğe sırala ve en baştakini (en güçlü olanı) al
-                return g.OrderByDescending(x => GetTitlePower(x.Title)).First();
-            })
+        var result = await connection.QueryAsync<FinalEmployeeDto>(sql);
+        
+        // Tekilleştirme (Sicil No'ya göre)
+        var distinct = result
+            .GroupBy(x => x.SicilNo)
+            .Select(g => g.First())
             .ToList();
 
-        return deduplicatedResult;
+        return distinct;
     }
 
-    private List<EmployeeDto> BuildTree(List<EmployeeDto> flatList)
+    private List<OrgNodeDto> BuildEnterpriseTree(List<FinalEmployeeDto> allEmployees)
     {
-        var lookup = flatList.Where(x => !string.IsNullOrEmpty(x.Id)).ToDictionary(x => x.Id!);
-        var rootNodes = new List<EmployeeDto>();
-        var orphans = new List<EmployeeDto>();
+        var nodeDictionary = new Dictionary<string, OrgNodeDto>();
+        var rootNodes = new List<OrgNodeDto>();
 
-        foreach (var item in flatList)
+        // 1. Her çalışan için ait olacağı Pozisyon Kutusunun ID'sini belirle
+        // Kutular, bağlı oldukları yöneticinin SicilNo'su ve Pozisyon Adı ile eşsiz hale gelir.
+        var sicilToBoxId = new Dictionary<string, string>();
+        foreach (var emp in allEmployees)
         {
-            // Eğer kişinin yöneticisi yoksa veya DB'de eşleşmiyorsa, onları önce "Sahipsizler" (orphans) havuzuna alıyoruz
-            if (string.IsNullOrEmpty(item.ManagerId) || !lookup.ContainsKey(item.ManagerId))
+            string managerSicil = string.IsNullOrWhiteSpace(emp.ManagerSicilNo) || emp.ManagerSicilNo == emp.SicilNo ? "00000000" : emp.ManagerSicilNo.Trim();
+            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "Belirtilmemiş" : emp.PositionName.Trim();
+            
+            string boxId = $"{managerSicil}_{posName}";
+            sicilToBoxId[emp.SicilNo] = boxId;
+        }
+
+        // 2. Pozisyon Kutularını oluştur ve çalışanları içine doldur
+        foreach (var emp in allEmployees)
+        {
+            string boxId = sicilToBoxId[emp.SicilNo];
+            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "Belirtilmemiş" : emp.PositionName.Trim();
+            
+            if (!nodeDictionary.ContainsKey(boxId))
             {
-                orphans.Add(item);
+                var node = new OrgNodeDto 
+                { 
+                    Id = boxId, 
+                    Name = posName, 
+                    Type = NodeType.Position 
+                };
+                nodeDictionary[boxId] = node;
+            }
+
+            nodeDictionary[boxId].Employees.Add(new EmployeeSummaryDto
+            {
+                SicilNo = emp.SicilNo,
+                NameSurname = emp.NameSurname,
+                Email = emp.Email
+            });
+        }
+
+        // 3. Kutuları Birbirine Bağla (Parent-Child İlişkisi)
+        foreach (var kvp in nodeDictionary)
+        {
+            var node = kvp.Value;
+            
+            // Bu kutudaki herhangi bir çalışanı referans alarak yöneticisini bulalım
+            var representativeEmp = node.Employees.First();
+            var empData = allEmployees.First(e => e.SicilNo == representativeEmp.SicilNo);
+            
+            string managerSicil = string.IsNullOrWhiteSpace(empData.ManagerSicilNo) || empData.ManagerSicilNo == empData.SicilNo ? "00000000" : empData.ManagerSicilNo.Trim();
+            
+            // Eğer yöneticisi yoksa (00000000) veya yönetici veritabanında bulunamadıysa bu bir ROOT (Kök) düğümdür.
+            if (managerSicil == "00000000" || !sicilToBoxId.ContainsKey(managerSicil))
+            {
+                rootNodes.Add(node);
             }
             else
             {
-                lookup[item.ManagerId].Subordinates.Add(item);
+                // Yöneticinin kutusunu bul
+                string parentBoxId = sicilToBoxId[managerSicil];
+                if (nodeDictionary.TryGetValue(parentBoxId, out var parentNode))
+                {
+                    // Döngüsel referans kontrolü (Kendi kendine bağlanmasını engelle)
+                    if (parentBoxId != node.Id)
+                    {
+                        node.ParentId = parentBoxId;
+                        parentNode.Children.Add(node);
+                    }
+                    else 
+                    {
+                        rootNodes.Add(node);
+                    }
+                }
+                else
+                {
+                    rootNodes.Add(node);
+                }
             }
         }
 
-        if (orphans.Any())
-        {
-            // İçlerindeki en yetkili kişiyi (Genel Yönetici / CEO) buluyoruz (Unvan gücü en yüksek olan)
-            var generalManager = orphans.OrderByDescending(x => GetTitlePower(x.Title)).First();
-            
-            // En Tepeye SADECE Genel Yöneticiyi koyuyoruz
-            rootNodes.Add(generalManager);
-
-            // Geri kalan yöneticisi belli olmayan herkesi, mecburen Genel Yöneticiye bağlıyoruz
-            foreach (var orphan in orphans.Where(x => x.Id != generalManager.Id))
-            {
-                generalManager.Subordinates.Add(orphan);
-            }
-        }
-
+        // Her kutu zaten içindeki çalışanlar sayesinde var olduğu için boş kutu oluşma ihtimali SIFIRDIR.
+        // Bu yüzden Prune (Budama) yapmaya gerek yoktur. Dümdüz organik hiyerarşi döner.
         return rootNodes;
     }
 }

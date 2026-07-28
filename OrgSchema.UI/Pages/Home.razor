@@ -46,7 +46,7 @@ else
             <div id="org-container" class="org-chart-container">
                 @foreach (var node in orgNodes)
                 {
-                    <OrgNode Employee="node" Level="1" />
+                    <OrgNode Node="node" Level="1" />
                 }
             </div>
         </div>
@@ -111,11 +111,10 @@ else
                     @foreach (var person in GetPeopleInUnit(selectedFirm, selectedDept, selectedUnit))
                     {
                         <div class="person-card">
-                            <div class="person-avatar">@GetInitials(person.FullName)</div>
+                            <div class="person-avatar">@GetInitials(person.ENAME)</div>
                             <div class="person-info">
-                                <h4>@person.FullName</h4>
-                                <span class="p-title">@person.Title</span>
-                                <span class="p-email">📧 @person.Email</span>
+                                <h4>@person.ENAME</h4>
+                                <span class="p-title">@person.POSITIONNAME</span>
                             </div>
                         </div>
                     }
@@ -126,8 +125,8 @@ else
 }
 
 @code {
-    private List<EmployeeDto>? orgNodes;
-    private List<EmployeeDto>? allEmployees;
+    private List<OrgNodeDto>? orgNodes;
+    private List<HROrganizationDto>? allEmployees;
     private string activeTab = "OrgChart";
     private string? errorMessage;
 
@@ -140,44 +139,27 @@ else
         try 
         {
             // Orijinal hiyerarşik ağaç verisi (OrgChart için)
-            orgNodes = await Http.GetFromJsonAsync<List<EmployeeDto>>("http://localhost:5009/api/orgchart");
+            orgNodes = await Http.GetFromJsonAsync<List<OrgNodeDto>>("http://localhost:5009/api/orgchart");
             
-            // "Kime Danışabilirim" ekranında düz (flat) listeye ihtiyacımız var, hiyerarşiden flat liste çıkartıyoruz
-            allEmployees = new List<EmployeeDto>();
-            if (orgNodes != null)
-            {
-                // Root düğümleri açık gelsin
-                foreach (var root in orgNodes)
-                {
-                    root.IsExpanded = true;
-                }
-                
-                FlattenTree(orgNodes, allEmployees);
-            }
+            // "Kime Danışabilirim" ekranı için düz (flat) listeyi doğrudan yeni API'den çek
+            allEmployees = await Http.GetFromJsonAsync<List<HROrganizationDto>>("http://localhost:5009/api/employees/flat");
         }
         catch (Exception ex)
         {
-            errorMessage = "API'ye bağlanırken veya veritabanından veri çekerken bir hata oluştu. Lütfen API terminalindeki (siyah ekran) kırmızı hata mesajlarını kontrol edin. Hata detayı: " + ex.Message;
+            errorMessage = "API'ye bağlanırken veya veritabanından veri çekerken bir hata oluştu. Hata detayı: " + ex.Message;
             Console.WriteLine(errorMessage);
         }
     }
 
-    private void FlattenTree(IEnumerable<EmployeeDto> nodes, List<EmployeeDto> result)
-    {
-        foreach (var node in nodes)
-        {
-            result.Add(node);
-            if (node.Subordinates != null && node.Subordinates.Any())
-            {
-                FlattenTree(node.Subordinates, result);
-            }
-        }
-    }
+    private bool _zoomInitialized = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && orgNodes != null)
+        // orgNodes null değilse ve daha önce initialize etmediysek, render tamamlanmıştır.
+        if (orgNodes != null && !_zoomInitialized && activeTab == "OrgChart")
         {
+            _zoomInitialized = true;
+            await Task.Delay(200); // DOM'un ekrana tamamen çizilmesi için kısa bir bekleme
             await JSRuntime.InvokeVoidAsync("orgChartFunctions.initZoomPan", "org-wrapper", "org-container");
         }
     }
@@ -216,27 +198,28 @@ else
 
     private IEnumerable<string> GetFirms()
     {
-        return allEmployees!.Where(x => !string.IsNullOrEmpty(x.Company)).Select(x => x.Company).Distinct().OrderBy(x => x);
+        return allEmployees!.Where(x => !string.IsNullOrWhiteSpace(x.COMPANYNAME)).Select(x => x.COMPANYNAME).Distinct().OrderBy(x => x);
     }
 
     private IEnumerable<string> GetDepartments(string firm)
     {
-        return allEmployees!.Where(x => x.Company == firm && !string.IsNullOrEmpty(x.Department))
-                            .Select(x => x.Department).Distinct().OrderBy(x => x);
+        return allEmployees!.Where(x => x.COMPANYNAME == firm && !string.IsNullOrWhiteSpace(x.DEPARTMENTNAME))
+                            .Select(x => x.DEPARTMENTNAME).Distinct().OrderBy(x => x);
     }
 
     private IEnumerable<string> GetUnits(string firm, string dept)
     {
-        return allEmployees!.Where(x => x.Company == firm && x.Department == dept && !string.IsNullOrEmpty(x.Unit))
-                            .Select(x => x.Unit).Distinct().OrderBy(x => x);
+        // HROrganizationDto'da Unit yok, Profession'u Unit olarak kullanalım veya doğrudan null dönelim
+        return allEmployees!.Where(x => x.COMPANYNAME == firm && x.DEPARTMENTNAME == dept && !string.IsNullOrWhiteSpace(x.PROFESSION))
+                            .Select(x => x.PROFESSION).Distinct().OrderBy(x => x);
     }
 
-    private IEnumerable<EmployeeDto> GetPeopleInUnit(string firm, string dept, string unit)
+    private IEnumerable<HROrganizationDto> GetPeopleInUnit(string firm, string dept, string unit)
     {
-        // Yönetici (Manager) unvanı geçenler veya yetkili kişiler üste gelsin diye bir sıralama yapılabilir
-        return allEmployees!.Where(x => x.Company == firm && x.Department == dept && x.Unit == unit)
-                            .OrderByDescending(x => x.Title.Contains("Müdür") || x.Title.Contains("Yönetici"))
-                            .ThenBy(x => x.FullName);
+        // Yönetici unvanı geçenler veya yetkili kişiler üste gelsin diye bir sıralama yapılabilir
+        return allEmployees!.Where(x => x.COMPANYNAME == firm && x.DEPARTMENTNAME == dept && x.PROFESSION == unit)
+                            .OrderByDescending(x => x.POSITIONNAME.Contains("Müdür") || x.POSITIONNAME.Contains("Yönetici"))
+                            .ThenBy(x => x.ENAME);
     }
 
     private string GetInitials(string fullName)

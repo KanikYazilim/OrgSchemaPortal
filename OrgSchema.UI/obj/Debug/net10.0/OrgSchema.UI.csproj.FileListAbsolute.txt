@@ -207,9 +207,6 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\icudt_EFIGS.tptq2av103.dat
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\icudt_no_CJK.lfu7j35m59.dat
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\Microsoft.DotNet.HotReload.WebAssembly.Browser.ccsptreuls.wasm
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.0figws6kn7.wasm
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.v7rlfqs6lr.pdb
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\dotnet.b3dfk81z8c.js
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\blazor.webassembly.w3qd1tpl0e.js.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\Microsoft.AspNetCore.Authorization.4w3z20tuqk.wasm.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\Microsoft.AspNetCore.Components.0z8r7oen0q.wasm.gz
@@ -418,9 +415,6 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\icudt_EFIGS.tptq2av103.dat.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\icudt_no_CJK.lfu7j35m59.dat.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\Microsoft.DotNet.HotReload.WebAssembly.Browser.ccsptreuls.wasm.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.0figws6kn7.wasm.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.v7rlfqs6lr.pdb.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\dotnet.b3dfk81z8c.js.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\OrgSchema.UI.staticwebassets.runtime.json
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\OrgSchema.UI.staticwebassets.endpoints.json
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\OrgSchema.UI.dll
@@ -643,6 +637,7 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\OrgSchema.UI.AssemblyInfo.cs
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\OrgSchema.UI.csproj.CoreCompileInputs.cache
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\OrgSchema.UI.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\OrgSchema.UI.sourcelink.json
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\webcil\Microsoft.AspNetCore.Authorization.wasm
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\webcil\Microsoft.AspNetCore.Components.wasm
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\webcil\Microsoft.AspNetCore.Components.Forms.wasm
@@ -857,8 +852,7 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\dotnet.js
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\staticwebassets\htmlassetplaceholders\build\fbzmivw8qr.html
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\rr429acrzx-{0}-99zm1jdh75-99zm1jdh75.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\x8v6vz9lmp-{0}-uok3q2seyn-uok3q2seyn.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\tbdc0vmv20-{0}-vjta9805aq-vjta9805aq.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\tbdc0vmv20-{0}-9cclczpgll-9cclczpgll.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\vjkallhvov-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\r998j0ogou-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\dn80zvfx0b-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -1114,10 +1108,6 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\s65lm7sw5h-{0}-tptq2av103-tptq2av103.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\6bjwkcqqa0-{0}-lfu7j35m59-lfu7j35m59.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\6mzeali758-{0}-ccsptreuls-ccsptreuls.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ricywbrww9-{0}-0figws6kn7-0figws6kn7.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ep1pbwo7ak-{0}-v7rlfqs6lr-v7rlfqs6lr.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\af7s8xitj6-{0}-b3dfk81z8c-b3dfk81z8c.gz
-C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ilz0vyfdqz-{0}-f8j69pjpg7-f8j69pjpg7.gz
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\staticwebassets.development.json
@@ -1128,3 +1118,14 @@ C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\refint\OrgSchema.UI.dll
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\OrgSchema.UI.pdb
 C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\ref\OrgSchema.UI.dll
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.d85qts63dk.wasm
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.uk2i5z4mv5.pdb
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\dotnet.hl1o52l3yw.js
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.d85qts63dk.wasm.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\OrgSchema.UI.uk2i5z4mv5.pdb.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\bin\Debug\net10.0\wwwroot\_framework\dotnet.hl1o52l3yw.js.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ricywbrww9-{0}-d85qts63dk-d85qts63dk.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ep1pbwo7ak-{0}-uk2i5z4mv5-uk2i5z4mv5.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\af7s8xitj6-{0}-hl1o52l3yw-hl1o52l3yw.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\ilz0vyfdqz-{0}-vccm9e9n5g-vccm9e9n5g.gz
+C:\Users\emiralagoz\.gemini\antigravity\scratch\OrgSchemaPortal\OrgSchema.UI\obj\Debug\net10.0\compressed\x8v6vz9lmp-{0}-xy9041bos9-xy9041bos9.gz

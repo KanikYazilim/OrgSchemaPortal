@@ -47,21 +47,25 @@ window.orgChartFunctions = {
             }
         });
 
-        // Mouse Wheel (Zoom)
+        // Mouse Wheel (Google Maps Style Smooth Zoom)
         wrapper.addEventListener('wheel', (e) => {
-            e.preventDefault(); // Sayfanın scroll olmasını engelle
+            e.preventDefault(); 
             
-            const delta = e.deltaY > 0 ? -0.1 : 0.1; // Scroll yönü
-            const newScale = Math.min(Math.max(0.2, scale + delta), 4.0); // 0.2x ile 4.0x arası sınır
+            // Hassas zoom için deltaY
+            const zoomSensitivity = 0.0015;
+            const delta = -e.deltaY * zoomSensitivity;
+            
+            // Eksponansiyel büyüme ile pürüzsüz zoom (0.1x ile 5.0x arası sınır)
+            const newScale = Math.min(Math.max(0.1, scale * Math.exp(delta)), 5.0);
             
             if (scale === newScale) return;
 
-            // Farenin wrapper içindeki pozisyonunu bul
+            // Farenin wrapper içindeki kordinatları
             const rect = wrapper.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // Zoom işleminin merkez noktasını fare imleci yapmak için translate hesaplaması
+            // Zoom işleminin merkez noktasını fare imleci yapmak için matematik
             translateX = mouseX - (mouseX - translateX) * (newScale / scale);
             translateY = mouseY - (mouseY - translateY) * (newScale / scale);
 

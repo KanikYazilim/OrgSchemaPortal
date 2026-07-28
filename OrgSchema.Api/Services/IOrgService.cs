@@ -3,5 +3,9 @@ using OrgSchema.Api.Models;
 
 public interface IOrgService
 {
-    Task<List<EmployeeDto>> GetProcessedOrganizationChartAsync();
+    // Hiyerarşik Ağaç Yapısı (Şema için)
+    Task<List<OrgNodeDto>> GetProcessedOrganizationChartAsync();
+    
+    // Düz Çalışan Listesi (Kime Danışabilirim için)
+    Task<List<FinalEmployeeDto>> GetFlatEmployeeListAsync();
 }

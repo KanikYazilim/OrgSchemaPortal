@@ -1,31 +1,37 @@
 @using OrgSchema.UI.Models
 
-<div class="org-node level-@Level">
+<div class="org-node level-@Level node-position">
     <div class="card">
         <div class="card-content">
-            <span class="title">@Employee.Title</span>
-            <span class="name">@Employee.FullName</span>
+            <span class="title">@Node.Name</span>
+            
+            @if (Node.Employees.Any())
+            {
+                <div class="employee-list">
+                    @foreach (var emp in Node.Employees)
+                    {
+                        <div class="employee-item">
+                            <span class="name">@emp.NameSurname</span>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
     
-    @if (Employee.Subordinates.Any())
+    @if (Node.Children.Any())
     {
-        // SAĞA KAYMAYI KESİN OLARAK ENGELLEYEN KURAL:
-        // Eğer bu personel 3. Kademe (Müdür, Şef vs) veya daha altındaysa, 
-        // altındaki herkesi KESİNLİKLE dikey (hanging) olarak aşağı sarkıt!
-        // (Sadece Yönetim Kurulu ve Genel Müdür seviyesi yatay açılır)
-        bool shouldHang = Level >= 2;
-        
-        <div class="children @(shouldHang ? "hanging" : "horizontal")">
-            @foreach (var sub in Employee.Subordinates)
+        var layoutClass = Level >= 2 ? "hanging" : "horizontal";
+        <div class="children @layoutClass">
+            @foreach (var child in Node.Children)
             {
-                <OrgNode Employee="sub" Level="@(Level + 1)" />
+                <OrgNode Node="child" Level="@(Level + 1)" />
             }
         </div>
     }
 </div>
 
 @code {
-    [Parameter] public EmployeeDto Employee { get; set; } = new();
+    [Parameter] public OrgNodeDto Node { get; set; } = new();
     [Parameter] public int Level { get; set; } = 1;
 }
