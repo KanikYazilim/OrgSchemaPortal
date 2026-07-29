@@ -3,6 +3,12 @@
 <div class="org-node level-@Level node-position">
     <div class="card">
         <div class="card-content">
+            <div class="node-meta">
+                @if (!string.IsNullOrEmpty(Node.Company)) { <span class="badge badge-company">@Node.Company</span> }
+                @if (!string.IsNullOrEmpty(Node.Department)) { <span class="badge badge-dept">@Node.Department</span> }
+                @if (!string.IsNullOrEmpty(Node.Unit)) { <span class="badge badge-unit">@Node.Unit</span> }
+            </div>
+            
             <span class="title">@Node.Name</span>
             
             @if (Node.Employees.Any())
@@ -23,6 +29,11 @@
                     @(IsExpanded ? "-" : "+")
                 </button>
             }
+            
+            <!-- Focused Mode Button -->
+            <button class="focus-btn" @onclick="FocusNode" title="Bu birime odaklan">
+                &#128269;
+            </button>
         </div>
     </div>
     
@@ -31,7 +42,7 @@
         <div class="children horizontal">
             @foreach (var child in Node.Children)
             {
-                <OrgNode Node="child" Level="@(Level + 1)" />
+                <OrgNode Node="child" Level="@(Level + 1)" OnNodeFocused="OnNodeFocused" />
             }
         </div>
     }
@@ -40,16 +51,26 @@
 @code {
     [Parameter] public OrgNodeDto Node { get; set; } = new();
     [Parameter] public int Level { get; set; } = 1;
+    [Parameter] public EventCallback<string> OnNodeFocused { get; set; }
     
     private bool IsExpanded { get; set; }
 
     protected override void OnInitialized()
     {
+        // YK (1) ve Genel Müdür (2) seviyeleri açık gelsin
         IsExpanded = Level <= 2;
     }
 
     private void ToggleExpand()
     {
         IsExpanded = !IsExpanded;
+    }
+    
+    private async Task FocusNode()
+    {
+        if (OnNodeFocused.HasDelegate)
+        {
+            await OnNodeFocused.InvokeAsync(Node.Id);
+        }
     }
 }

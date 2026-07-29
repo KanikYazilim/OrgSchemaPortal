@@ -270,3 +270,64 @@ html, body {
     transform: scale(1.1);
     box-shadow: var(--shadow-md);
 }
+.node-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+.badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.badge-company { background: #e3f2fd; color: #1565c0; }
+.badge-dept { background: #f3e5f5; color: #7b1fa2; }
+.badge-unit { background: #e8f5e9; color: #2e7d32; }
+
+.focus-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.focus-btn:hover {
+    opacity: 1;
+}
+
+/* Personel listesi açılıp kapanma stili */
+.employees-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(81, 26, 102, 0.08);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 0.75rem;
+    transition: var(--transition);
+}
+
+.employees-toggle:hover {
+    background: rgba(81, 26, 102, 0.15);
+}
+
+.employees-count {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-icon {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}

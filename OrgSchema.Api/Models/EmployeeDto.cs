@@ -6,7 +6,7 @@ public class OrgNodeDto
 {
     public string Id { get; set; } = string.Empty;
     public string ParentId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty; // Position Name
     public NodeType Type { get; set; }
     
     // Yalnızca Type == Position olduğunda dolu olacak
@@ -14,6 +14,11 @@ public class OrgNodeDto
     
     public List<OrgNodeDto> Children { get; set; } = new();
     public bool IsExpanded { get; set; } = true;
+    
+    // Eklenen yeni alanlar
+    public string Company { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
 }
 
 public class EmployeeSummaryDto
@@ -49,11 +54,13 @@ public class HROrganizationDto
     public string LASTNAME { get; set; } = string.Empty;
     public string DEPARTMENT { get; set; } = string.Empty;
     public string DEPARTMENTNAME { get; set; } = string.Empty;
+    public string UNITNAME { get; set; } = string.Empty;
     public string PROFESSION { get; set; } = string.Empty;
     public string POSITIONNAME { get; set; } = string.Empty;
     public string MANAGERUSERID { get; set; } = string.Empty;
     public string? MANAGERSICILNO { get; set; }
     public string COMPANY { get; set; } = string.Empty;
     public string COMPANYNAME { get; set; } = string.Empty;
+    public int IsHidden { get; set; }
+    public int SortOrder { get; set; }
 }
-

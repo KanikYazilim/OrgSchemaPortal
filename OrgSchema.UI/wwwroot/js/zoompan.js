@@ -1,6 +1,6 @@
-window.orgChartFunctions = {
+﻿window.orgChartFunctions = {
     initZoomPan: function (wrapperId, containerId) {
-        const wrapper = document.getElementById(wrapperId);
+        console.log("initZoomPan called for", wrapperId); const wrapper = document.getElementById(wrapperId); if (wrapper.dataset.zoomInitialized) return; wrapper.dataset.zoomInitialized = "true";
         const container = document.getElementById(containerId);
         
         if (!wrapper || !container) {
@@ -21,7 +21,7 @@ window.orgChartFunctions = {
 
         // Mouse Down (Drag Start)
         wrapper.addEventListener('mousedown', (e) => {
-            // Kartlara veya ikonlara tıklandığında sürüklemeyi engelle
+            // Kartlara veya ikonlara tÄ±klandÄ±ÄŸÄ±nda sÃ¼rÃ¼klemeyi engelle
             if (e.target.closest('.card') || e.target.closest('button')) return;
             
             isDragging = true;
@@ -51,21 +51,21 @@ window.orgChartFunctions = {
         wrapper.addEventListener('wheel', (e) => {
             e.preventDefault(); 
             
-            // Hassas zoom için deltaY
+            // Hassas zoom iÃ§in deltaY
             const zoomSensitivity = 0.0015;
             const delta = -e.deltaY * zoomSensitivity;
             
-            // Eksponansiyel büyüme ile pürüzsüz zoom (0.1x ile 5.0x arası sınır)
+            // Eksponansiyel bÃ¼yÃ¼me ile pÃ¼rÃ¼zsÃ¼z zoom (0.1x ile 5.0x arasÄ± sÄ±nÄ±r)
             const newScale = Math.min(Math.max(0.1, scale * Math.exp(delta)), 5.0);
             
             if (scale === newScale) return;
 
-            // Farenin wrapper içindeki kordinatları
+            // Farenin wrapper iÃ§indeki kordinatlarÄ±
             const rect = wrapper.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // Zoom işleminin merkez noktasını fare imleci yapmak için matematik
+            // Zoom iÅŸleminin merkez noktasÄ±nÄ± fare imleci yapmak iÃ§in matematik
             translateX = mouseX - (mouseX - translateX) * (newScale / scale);
             translateY = mouseY - (mouseY - translateY) * (newScale / scale);
 
@@ -78,3 +78,5 @@ window.orgChartFunctions = {
         }
     }
 };
+
+

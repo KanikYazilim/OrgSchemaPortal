@@ -1,62 +1,51 @@
-@page "/"
+﻿@page "/"
+@using System.Net.Http
+@using System.Net.Http.Json
 @using OrgSchema.UI.Models
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Kanik Şirketler Grubu Portal</PageTitle>
-
-<div class="header-tabs">
-    <div class="tab @(activeTab == "OrgChart" ? "active" : "")" @onclick='() => SwitchTab("OrgChart")'>
-        <span class="icon">🗂️</span> Organizasyon Şeması
-    </div>
-    <div class="tab @(activeTab == "Consult" ? "active" : "")" @onclick='() => SwitchTab("Consult")'>
-        <span class="icon">❓</span> Kime Danışabilirim
-    </div>
-</div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
+@if (errorMessage != null)
 {
-    <div class="loading-container">
-        <p style="color: red; max-width: 600px; text-align: center;">@errorMessage</p>
+    <div class="alert alert-danger">
+        <h4>Hata Oluştu</h4>
+        <pre>@errorMessage</pre>
     </div>
 }
-else if (orgNodes == null || allEmployees == null)
+else if (originalOrgNodes == null || allEmployees == null)
 {
     <div class="loading-container">
-        <div class="spinner"></div>
-        <p>Veriler yükleniyor...</p>
-    </div>
-}
-else if (!orgNodes.Any())
-{
-    <div class="loading-container">
-        <p>Gösterilecek organizasyon verisi bulunamadı.</p>
+        <p>Veriler yükleniyor, lütfen bekleyin... (Bu işlem veri büyüklüğüne göre 5-10 saniye sürebilir)</p>
+        <p>Durum: @statusMessage</p>
     </div>
 }
 else
 {
-    <!-- ORGANİZASYON ŞEMASI SEKMESİ -->
+    <!-- ORGANÄ°ZASYON ÅzEMASI SEKMESÄ° -->
     <div style="display: @(activeTab == "OrgChart" ? "block" : "none")">
         <div class="header-container">
-            <h1><span class="purple-text">Kurumsal</span> Organizasyon Şeması</h1>
-            <p class="hint">💡 Şemayı farenizle sürükleyebilir ve tekerlek (mouse wheel) ile istediğiniz bölgeye yakınlaşabilirsiniz.</p>
+            <h1><span class="purple-text">Kurumsal</span> Organizasyon ÅzemasÄ±</h1>
+            <p class="hint">?? ÅzemayÄ± farenizle sÃ¼rÃ¼kleyebilir ve tekerlek (mouse wheel) ile istediÄŸiniz bÃ¶lgeye yakÄ±nlaÅŸabilirsiniz.</p>
+            @if(isFocusedMode)
+            {
+                <button class="btn btn-secondary mt-2" @onclick="ResetFocus">Tüm Şemayı Göster</button>
+            }
         </div>
 
         <div id="org-wrapper" class="org-chart-wrapper">
             <div id="org-container" class="org-chart-container">
-                @foreach (var node in orgNodes)
+                @foreach (var node in currentOrgNodes)
                 {
-                    <OrgNode Node="node" Level="1" />
+                    <OrgNode Node="node" Level="1" OnNodeFocused="HandleNodeFocused" />
                 }
             </div>
         </div>
     </div>
 
-    <!-- KİME DANIŞABİLİRİM SEKMESİ -->
+    <!-- KÄ°ME DANIÅzABÄ°LÄ°RÄ°M SEKMESÄ° -->
     <div style="display: @(activeTab == "Consult" ? "block" : "none")">
         
         <div class="consult-columns-wrapper">
-            <!-- 1. Firma Kolonu -->
             <div class="consult-col">
                 <h3 class="col-title">Firma</h3>
                 <div class="col-list">
@@ -69,7 +58,6 @@ else
                 </div>
             </div>
 
-            <!-- 2. Departmanlar Kolonu -->
             <div class="consult-col">
                 <h3 class="col-title">Departmanlar</h3>
                 <div class="col-list">
@@ -85,7 +73,6 @@ else
                 </div>
             </div>
 
-            <!-- 3. Birimler Kolonu -->
             <div class="consult-col">
                 <h3 class="col-title">Birimler</h3>
                 <div class="col-list">
@@ -102,7 +89,6 @@ else
             </div>
         </div>
 
-        <!-- 4. Sonuç (Kişiler) Listesi -->
         @if (!string.IsNullOrEmpty(selectedUnit))
         {
             <div class="consult-results">
@@ -111,10 +97,10 @@ else
                     @foreach (var person in GetPeopleInUnit(selectedFirm, selectedDept, selectedUnit))
                     {
                         <div class="person-card">
-                            <div class="person-avatar">@GetInitials(person.ENAME)</div>
+                            <div class="person-avatar">@GetInitials(person.NameSurname)</div>
                             <div class="person-info">
-                                <h4>@person.ENAME</h4>
-                                <span class="p-title">@person.POSITIONNAME</span>
+                                <h4>@person.NameSurname</h4>
+                                <span class="p-title">@person.PositionName</span>
                             </div>
                         </div>
                     }
@@ -125,10 +111,13 @@ else
 }
 
 @code {
-    private List<OrgNodeDto>? orgNodes;
-    private List<HROrganizationDto>? allEmployees;
+    private List<OrgNodeDto>? originalOrgNodes;
+    private List<OrgNodeDto>? currentOrgNodes = new();
+    private List<FinalEmployeeDto>? allEmployees;
     private string activeTab = "OrgChart";
     private string? errorMessage;
+    private string statusMessage = "API isteği başlatılıyor...";
+    private bool isFocusedMode = false;
 
     private string? selectedFirm;
     private string? selectedDept;
@@ -138,28 +127,126 @@ else
     {
         try 
         {
-            // Orijinal hiyerarşik ağaç verisi (OrgChart için)
-            orgNodes = await Http.GetFromJsonAsync<List<OrgNodeDto>>("http://localhost:5009/api/orgchart");
+            statusMessage = "Şema verisi çekiliyor (GET /api/orgchart)...";
+            StateHasChanged();
             
-            // "Kime Danışabilirim" ekranı için düz (flat) listeyi doğrudan yeni API'den çek
-            allEmployees = await Http.GetFromJsonAsync<List<HROrganizationDto>>("http://localhost:5009/api/employees/flat");
+            var req1 = await Http.GetAsync("http://localhost:5009/api/orgchart");
+            if(!req1.IsSuccessStatusCode) {
+                errorMessage = $"OrgChart API hatası: {req1.StatusCode}";
+                return;
+            }
+            originalOrgNodes = await req1.Content.ReadFromJsonAsync<List<OrgNodeDto>>();
+            currentOrgNodes = originalOrgNodes;
+            
+            statusMessage = "Düz liste verisi çekiliyor (GET /api/employees/flat)...";
+            StateHasChanged();
+
+            var req2 = await Http.GetAsync("http://localhost:5009/api/employees/flat");
+            if(!req2.IsSuccessStatusCode) {
+                errorMessage = $"Employees API hatası: {req2.StatusCode}";
+                return;
+            }
+            allEmployees = await req2.Content.ReadFromJsonAsync<List<FinalEmployeeDto>>();
         }
         catch (Exception ex)
         {
-            errorMessage = "API'ye bağlanırken veya veritabanından veri çekerken bir hata oluştu. Hata detayı: " + ex.Message;
-            Console.WriteLine(errorMessage);
+            errorMessage = ex.ToString();
         }
+    }
+
+    private void HandleNodeFocused(string targetId)
+    {
+        if (originalOrgNodes == null) return;
+        var path = FindPath(originalOrgNodes, targetId);
+        if (path != null && path.Any())
+        {
+            currentOrgNodes = BuildFocusedTree(path);
+            isFocusedMode = true;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetFocus()
+    {
+        currentOrgNodes = originalOrgNodes;
+        isFocusedMode = false;
+        StateHasChanged();
+    }
+
+    private List<OrgNodeDto>? FindPath(List<OrgNodeDto> nodes, string targetId)
+    {
+        foreach(var node in nodes) {
+            if (node.Id == targetId) return new List<OrgNodeDto> { node };
+            var subPath = FindPath(node.Children, targetId);
+            if (subPath != null) {
+                subPath.Insert(0, node);
+                return subPath;
+            }
+        }
+        return null;
+    }
+
+    private List<OrgNodeDto> BuildFocusedTree(List<OrgNodeDto> path)
+    {
+        int startIndex = Math.Max(0, path.Count - 3); 
+        
+        OrgNodeDto? rootOfFocused = null;
+        OrgNodeDto? currentClone = null;
+        
+        for (int i = startIndex; i < path.Count; i++)
+        {
+            var original = path[i];
+            var clone = new OrgNodeDto 
+            {
+                Id = original.Id,
+                Name = original.Name,
+                Type = original.Type,
+                Employees = original.Employees,
+                Company = original.Company,
+                Department = original.Department,
+                Unit = original.Unit,
+                IsExpanded = true,
+                Children = new List<OrgNodeDto>()
+            };
+            
+            if (rootOfFocused == null) {
+                rootOfFocused = clone;
+                currentClone = clone;
+            } else {
+                currentClone!.Children.Add(clone);
+                currentClone = clone;
+            }
+        }
+        
+        var targetNode = path.Last();
+        foreach(var child in targetNode.Children)
+        {
+            var childClone = new OrgNodeDto
+            {
+                Id = child.Id,
+                Name = child.Name,
+                Type = child.Type,
+                Employees = child.Employees,
+                Company = child.Company,
+                Department = child.Department,
+                Unit = child.Unit,
+                IsExpanded = false, 
+                Children = child.Children 
+            };
+            currentClone!.Children.Add(childClone);
+        }
+        
+        return new List<OrgNodeDto> { rootOfFocused! };
     }
 
     private bool _zoomInitialized = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // orgNodes null değilse ve daha önce initialize etmediysek, render tamamlanmıştır.
-        if (orgNodes != null && !_zoomInitialized && activeTab == "OrgChart")
+        if (originalOrgNodes != null && allEmployees != null && !_zoomInitialized && activeTab == "OrgChart")
         {
             _zoomInitialized = true;
-            await Task.Delay(200); // DOM'un ekrana tamamen çizilmesi için kısa bir bekleme
+            await Task.Delay(200); 
             await JSRuntime.InvokeVoidAsync("orgChartFunctions.initZoomPan", "org-wrapper", "org-container");
         }
     }
@@ -168,16 +255,13 @@ else
     {
         activeTab = tabName;
         StateHasChanged();
-
-        // OrgChart'a geri dönerse JS Pan/Zoom'u tekrar başlat (DOM değiştiği için)
-        if (tabName == "OrgChart" && orgNodes != null)
+        if (tabName == "OrgChart" && originalOrgNodes != null)
         {
-            await Task.Delay(100); // DOM render'ı bekle
+            await Task.Delay(100); 
             await JSRuntime.InvokeVoidAsync("orgChartFunctions.initZoomPan", "org-wrapper", "org-container");
         }
     }
 
-    // --- Kime Danışabilirim Filtreleme Mantığı ---
     private void SelectFirm(string firm)
     {
         selectedFirm = firm;
@@ -198,28 +282,26 @@ else
 
     private IEnumerable<string> GetFirms()
     {
-        return allEmployees!.Where(x => !string.IsNullOrWhiteSpace(x.COMPANYNAME)).Select(x => x.COMPANYNAME).Distinct().OrderBy(x => x);
+        return allEmployees!.Where(x => !string.IsNullOrWhiteSpace(x.CompanyName)).Select(x => x.CompanyName).Distinct().OrderBy(x => x);
     }
 
     private IEnumerable<string> GetDepartments(string firm)
     {
-        return allEmployees!.Where(x => x.COMPANYNAME == firm && !string.IsNullOrWhiteSpace(x.DEPARTMENTNAME))
-                            .Select(x => x.DEPARTMENTNAME).Distinct().OrderBy(x => x);
+        return allEmployees!.Where(x => x.CompanyName == firm && !string.IsNullOrWhiteSpace(x.DepartmentName))
+                            .Select(x => x.DepartmentName).Distinct().OrderBy(x => x);
     }
 
     private IEnumerable<string> GetUnits(string firm, string dept)
     {
-        // HROrganizationDto'da Unit yok, Profession'u Unit olarak kullanalım veya doğrudan null dönelim
-        return allEmployees!.Where(x => x.COMPANYNAME == firm && x.DEPARTMENTNAME == dept && !string.IsNullOrWhiteSpace(x.PROFESSION))
-                            .Select(x => x.PROFESSION).Distinct().OrderBy(x => x);
+        return allEmployees!.Where(x => x.CompanyName == firm && x.DepartmentName == dept && !string.IsNullOrWhiteSpace(x.UnitName))
+                            .Select(x => x.UnitName).Distinct().OrderBy(x => x);
     }
 
-    private IEnumerable<HROrganizationDto> GetPeopleInUnit(string firm, string dept, string unit)
+    private IEnumerable<FinalEmployeeDto> GetPeopleInUnit(string firm, string dept, string unit)
     {
-        // Yönetici unvanı geçenler veya yetkili kişiler üste gelsin diye bir sıralama yapılabilir
-        return allEmployees!.Where(x => x.COMPANYNAME == firm && x.DEPARTMENTNAME == dept && x.PROFESSION == unit)
-                            .OrderByDescending(x => x.POSITIONNAME.Contains("Müdür") || x.POSITIONNAME.Contains("Yönetici"))
-                            .ThenBy(x => x.ENAME);
+        return allEmployees!.Where(x => x.CompanyName == firm && x.DepartmentName == dept && x.UnitName == unit)
+                            .OrderByDescending(x => x.PositionName.Contains("MÃ¼dÃ¼r") || x.PositionName.Contains("YÃ¶netici"))
+                            .ThenBy(x => x.NameSurname);
     }
 
     private string GetInitials(string fullName)
@@ -230,3 +312,5 @@ else
         return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
     }
 }
+
+
