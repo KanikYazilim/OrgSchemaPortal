@@ -41,7 +41,7 @@ app.MapGet("/api/health", () => Results.Ok(new { Status = "Healthy", Message = "
 // Org Chart endpoint
 app.MapGet("/api/orgchart", async (OrgSchema.Api.Services.OrganizationService orgService) =>
 {
-    var chart = await orgService.BuildAsync();
+    var chart = await orgService.GetProcessedOrganizationChartAsync();
     return Results.Ok(chart);
 });
 
@@ -123,3 +123,4 @@ app.MapGet("/api/diag/kisikart2-schema", async (OrgSchema.Api.Services.Diagnosti
 });
 
 app.Run();
+

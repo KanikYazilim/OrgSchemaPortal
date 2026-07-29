@@ -1,24 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using OrgSchema.Api.Models;
 
 namespace OrgSchema.Api.Services;
 
-public class HRPositionDto
-{
-    public string USERID { get; set; } = string.Empty;
-    public string DESCRIPTION { get; set; } = string.Empty;
-}
-
-public class UserOverrideDto
-{
-    public string USERID { get; set; } = string.Empty;
-    public string MANAGERUSERID { get; set; } = string.Empty;
-    public string POSITIONNAME { get; set; } = string.Empty;
-    public string DEPARTMENTNAME { get; set; } = string.Empty;
-}
-
-public class OrganizationService
+public class OrganizationService : IOrgService
 {
     private readonly string _connectionString;
 
@@ -28,179 +19,176 @@ public class OrganizationService
             ?? throw new ArgumentNullException("Connection string is missing.");
     }
 
-    public async Task<List<OrgNodeDto>> BuildAsync()
+    public async Task<List<HROrganizationDto>> GetRawOrganizationAsync()
     {
-        // 1. SQL'den Oku
-        var orgData = await FetchOrganizationDataAsync();
-        var positions = await FetchPositionsAsync();
-        var overrides = await FetchOverridesAsync();
+        var query = @"
+            SELECT 
+                COALESCE(o.SICILNO, h.SICILNO) as SICILNO,
+                COALESCE(o.ENAME, h.ENAME) as ENAME,
+                COALESCE(o.UserId, h.USERID) as USERID,
+                COALESCE(o.FIRSTNAME, h.FIRSTNAME) as FIRSTNAME,
+                COALESCE(o.LASTNAME, h.LASTNAME) as LASTNAME,
+                COALESCE(o.DEPARTMENT, h.DEPARTMENT) as DEPARTMENT,
+                COALESCE(o.DEPARTMENTNAME, h.DEPARTMENTNAME) as DEPARTMENTNAME,
+                COALESCE(o.PROFESSION, h.PROFESSION) as PROFESSION,
+                COALESCE(o.POSITIONNAME, h.POSITIONNAME) as POSITIONNAME,
+                COALESCE(o.MANAGERUSERID, h.MANAGERUSERID) as MANAGERUSERID,
+                o.MANAGERSICILNO as MANAGERSICILNO,
+                COALESCE(o.COMPANY, h.COMPANY) as COMPANY,
+                COALESCE(o.COMPANYNAME, h.COMPANYNAME) as COMPANYNAME,
+                ISNULL(o.IsHidden, 0) as IsHidden,
+                ISNULL(o.SortOrder, 999) as SortOrder
+            FROM HROrganizationTable h
+            FULL OUTER JOIN HierarchyOverrides o ON h.USERID = o.UserId
+            WHERE ISNULL(o.IsHidden, 0) = 0
+        ";
 
-        // 2. Override Uygula (Normalize & Correct)
-        ApplyOverrides(orgData, overrides);
-
-        // 3. Tree Oluştur (Pozisyon tabanlı organik hiyerarşi)
-        var tree = BuildPositionTree(orgData, positions);
-
-        return tree;
+        using var connection = new SqlConnection(_connectionString);
+        var data = await connection.QueryAsync<HROrganizationDto>(query);
+        return data.ToList();
     }
 
-    public async Task<List<HROrganizationDto>> GetFlatEmployeeListAsync()
+    public async Task<List<OrgNodeDto>> GetProcessedOrganizationChartAsync()
     {
-        var orgData = await FetchOrganizationDataAsync();
-        var overrides = await FetchOverridesAsync();
-        var positions = await FetchPositionsAsync();
-        var positionDict = positions.GroupBy(p => p.USERID).ToDictionary(g => g.Key, g => g.First().DESCRIPTION);
+        var allEmployees = await GetRawOrganizationAsync();
+        return BuildPositionTree(allEmployees);
+    }
 
-        ApplyOverrides(orgData, overrides);
+    private string FormatPositionName(string positionName)
+    {
+        if (string.IsNullOrWhiteSpace(positionName)) return "Belirtilmemi�";
+        string pos = positionName.Trim();
+        if (pos.Contains("Huzur Hakk�", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Y�netim Kurulu �yesi";
+        }
+        return pos;
+    }
+
+    public async Task<List<FinalEmployeeDto>> GetFlatEmployeeListAsync()
+    {
+        var allEmployees = await GetRawOrganizationAsync();
         
-        foreach (var emp in orgData)
+        var finalList = allEmployees.Select(emp => new FinalEmployeeDto
         {
-            if (positionDict.TryGetValue(emp.USERID, out var desc))
-            {
-                emp.POSITIONNAME = desc;
-            }
-        }
-        return orgData.OrderBy(x => x.ENAME).ToList();
-    }
-
-    private async Task<List<HROrganizationDto>> FetchOrganizationDataAsync()
-    {
-        using var connection = new SqlConnection(_connectionString);
-        // Tüm çalışanları çek
-        var sql = "SELECT * FROM HROrganizationTable";
-        var result = await connection.QueryAsync<HROrganizationDto>(sql);
+            SicilNo = emp.SICILNO,
+            NameSurname = emp.ENAME,
+            Email = $"{emp.USERID}@kanik.com",
+            CompanyId = emp.COMPANY ?? "",
+            CompanyName = emp.COMPANYNAME ?? "",
+            DepartmentId = emp.DEPARTMENT ?? "",
+            DepartmentName = emp.DEPARTMENTNAME ?? "",
+            UnitId = emp.DEPARTMENT ?? "",
+            UnitName = emp.DEPARTMENTNAME ?? "",
+            PositionName = FormatPositionName(emp.POSITIONNAME),
+            ManagerSicilNo = emp.MANAGERSICILNO ?? emp.MANAGERUSERID ?? "",
+            Manager = ""
+        }).OrderBy(x => x.NameSurname).ToList();
         
-        // Tekilleştirme (USERID'ye göre)
-        return result.GroupBy(x => x.USERID).Select(g => g.First()).ToList();
+        return finalList;
     }
 
-    private async Task<List<HRPositionDto>> FetchPositionsAsync()
-    {
-        using var connection = new SqlConnection(_connectionString);
-        try 
-        {
-            var sql = "SELECT USERID, DESCRIPTION FROM HRPositionsTable";
-            var result = await connection.QueryAsync<HRPositionDto>(sql);
-            return result.ToList();
-        }
-        catch 
-        {
-            // Tablo yoksa veya hata verirse boş dön
-            return new List<HRPositionDto>();
-        }
-    }
-
-    private async Task<List<UserOverrideDto>> FetchOverridesAsync()
-    {
-        using var connection = new SqlConnection(_connectionString);
-        try
-        {
-            // HierarchyOverrides tablosu, yanlış bilgilerin doğrusunu içerir
-            var sql = "SELECT USERID, MANAGERUSERID, POSITIONNAME, DEPARTMENTNAME FROM HierarchyOverrides";
-            var result = await connection.QueryAsync<UserOverrideDto>(sql);
-            return result.ToList();
-        }
-        catch
-        {
-            // Tablo henüz açılmamışsa boş dön
-            return new List<UserOverrideDto>();
-        }
-    }
-
-    private void ApplyOverrides(List<HROrganizationDto> orgData, List<UserOverrideDto> overrides)
-    {
-        var overrideDict = overrides.GroupBy(x => x.USERID).ToDictionary(g => g.Key, g => g.First());
-
-        foreach (var emp in orgData)
-        {
-            // "Huzur Hakkı" temizliği (Otomatik kural)
-            if (!string.IsNullOrWhiteSpace(emp.DEPARTMENTNAME) && emp.DEPARTMENTNAME.Contains("Huzur Hakkı", StringComparison.OrdinalIgnoreCase))
-            {
-                emp.DEPARTMENTNAME = "Yönetim Kurulu";
-            }
-            if (!string.IsNullOrWhiteSpace(emp.POSITIONNAME) && emp.POSITIONNAME.Contains("Huzur Hakkı", StringComparison.OrdinalIgnoreCase))
-            {
-                emp.POSITIONNAME = "Yönetim Kurulu Üyesi";
-            }
-
-            // Tablodan gelen manuel ezmeler
-            if (overrideDict.TryGetValue(emp.USERID, out var over))
-            {
-                if (!string.IsNullOrWhiteSpace(over.MANAGERUSERID))
-                    emp.MANAGERUSERID = over.MANAGERUSERID;
-
-                if (!string.IsNullOrWhiteSpace(over.POSITIONNAME))
-                    emp.POSITIONNAME = over.POSITIONNAME;
-
-                if (!string.IsNullOrWhiteSpace(over.DEPARTMENTNAME))
-                    emp.DEPARTMENTNAME = over.DEPARTMENTNAME;
-            }
-            
-            // Trim ve null koruması
-            emp.MANAGERUSERID = emp.MANAGERUSERID?.Trim() ?? "";
-            emp.POSITIONNAME = string.IsNullOrWhiteSpace(emp.POSITIONNAME) ? "Belirtilmemiş" : emp.POSITIONNAME.Trim();
-        }
-    }
-
-    private List<OrgNodeDto> BuildPositionTree(List<HROrganizationDto> allEmployees, List<HRPositionDto> positions)
+    private List<OrgNodeDto> BuildPositionTree(List<HROrganizationDto> allEmployees)
     {
         var nodeDictionary = new Dictionary<string, OrgNodeDto>();
         var rootNodes = new List<OrgNodeDto>();
         
-        var positionDict = positions.GroupBy(p => p.USERID).ToDictionary(g => g.Key, g => g.First().DESCRIPTION);
-
-        // 1. Her çalışan için Box ID belirle (ManagerUserId + PositionName)
-        var userToBoxId = new Dictionary<string, string>();
-        foreach (var emp in allEmployees)
-        {
-            string managerId = string.IsNullOrWhiteSpace(emp.MANAGERUSERID) || emp.MANAGERUSERID == emp.USERID ? "ROOT" : emp.MANAGERUSERID;
-            string boxId = $"{managerId}_{emp.POSITIONNAME}";
-            userToBoxId[emp.USERID] = boxId;
+        var userToBoxIds = new Dictionary<string, List<string>>();
+        var userIdToSicilNo = new Dictionary<string, string>();
+        foreach(var e in allEmployees) {
+            if (!string.IsNullOrWhiteSpace(e.USERID) && !string.IsNullOrWhiteSpace(e.SICILNO)) {
+                userIdToSicilNo[e.USERID] = e.SICILNO;
+            }
         }
 
-        // 2. Kutuları oluştur ve doldur
+        // 1. Kutular� olu�tur
         foreach (var emp in allEmployees)
         {
-            string boxId = userToBoxId[emp.USERID];
+            if (string.IsNullOrWhiteSpace(emp.SICILNO)) continue; 
+
+            string resolvedManagerSicilNo = "ROOT";
+            if (!string.IsNullOrWhiteSpace(emp.MANAGERSICILNO)) 
+            {
+                resolvedManagerSicilNo = emp.MANAGERSICILNO; 
+            } 
+            else if (!string.IsNullOrWhiteSpace(emp.MANAGERUSERID) && emp.MANAGERUSERID != emp.USERID) 
+            {
+                if (userIdToSicilNo.TryGetValue(emp.MANAGERUSERID, out var mappedSicilNo)) 
+                {
+                    resolvedManagerSicilNo = mappedSicilNo;
+                }
+                else
+                {
+                    resolvedManagerSicilNo = emp.MANAGERUSERID; 
+                }
+            }
             
+            string position = FormatPositionName(emp.POSITIONNAME);
+            string boxId = $"{resolvedManagerSicilNo}_{position}";
+            
+            if (!userToBoxIds.ContainsKey(emp.SICILNO))
+                userToBoxIds[emp.SICILNO] = new List<string>();
+                
+            if (!userToBoxIds[emp.SICILNO].Contains(boxId))
+                userToBoxIds[emp.SICILNO].Add(boxId);
+
             if (!nodeDictionary.ContainsKey(boxId))
             {
                 var node = new OrgNodeDto 
                 { 
                     Id = boxId, 
-                    Name = emp.POSITIONNAME, 
+                    Name = position, 
                     Type = NodeType.Position 
                 };
                 nodeDictionary[boxId] = node;
             }
 
-            // Kişinin unvanını (Title/Description) al
-            string unvan = positionDict.TryGetValue(emp.USERID, out var desc) ? desc : emp.POSITIONNAME;
-
-            nodeDictionary[boxId].Employees.Add(new EmployeeSummaryDto
+            if (!nodeDictionary[boxId].Employees.Any(e => e.SicilNo == emp.SICILNO))
             {
-                SicilNo = emp.USERID,
-                NameSurname = emp.ENAME,
-                Email = unvan // Email alanına şimdilik unvanı koyalım, UI'da unvan göstermek için
-            });
+                nodeDictionary[boxId].Employees.Add(new EmployeeSummaryDto
+                {
+                    SicilNo = emp.SICILNO,
+                    NameSurname = emp.ENAME,
+                    Email = position
+                });
+            }
         }
 
-        // 3. Parent-Child ilişkisi kur
+        // 2. Parent-Child ili�kisi kur
         foreach (var kvp in nodeDictionary)
         {
             var node = kvp.Value;
             var representativeEmp = node.Employees.First();
-            var empData = allEmployees.First(e => e.USERID == representativeEmp.SicilNo);
+            var empData = allEmployees.First(e => e.SICILNO == representativeEmp.SicilNo && FormatPositionName(e.POSITIONNAME) == node.Name);
             
-            string managerId = string.IsNullOrWhiteSpace(empData.MANAGERUSERID) || empData.MANAGERUSERID == empData.USERID ? "ROOT" : empData.MANAGERUSERID;
+            string resolvedManagerSicilNo = "ROOT";
+            if (!string.IsNullOrWhiteSpace(empData.MANAGERSICILNO)) 
+            {
+                resolvedManagerSicilNo = empData.MANAGERSICILNO;
+            } 
+            else if (!string.IsNullOrWhiteSpace(empData.MANAGERUSERID) && empData.MANAGERUSERID != empData.USERID) 
+            {
+                if (userIdToSicilNo.TryGetValue(empData.MANAGERUSERID, out var mappedSicilNo)) 
+                {
+                    resolvedManagerSicilNo = mappedSicilNo;
+                }
+                else
+                {
+                    resolvedManagerSicilNo = empData.MANAGERUSERID; 
+                }
+            }
 
-            if (managerId == "ROOT" || !userToBoxId.ContainsKey(managerId))
+            if (resolvedManagerSicilNo == "ROOT" || !userToBoxIds.ContainsKey(resolvedManagerSicilNo))
             {
                 rootNodes.Add(node);
             }
             else
             {
-                string parentBoxId = userToBoxId[managerId];
+                var sortedBoxes = userToBoxIds[resolvedManagerSicilNo]
+                    .OrderBy(b => b.Contains("Y�netim Kurulu") ? 1 : 0)
+                    .ToList();
+                    
+                string parentBoxId = sortedBoxes.First();
                 if (nodeDictionary.TryGetValue(parentBoxId, out var parentNode))
                 {
                     if (parentBoxId != node.Id)
@@ -210,7 +198,7 @@ public class OrganizationService
                     }
                     else 
                     {
-                        rootNodes.Add(node);
+                        rootNodes.Add(node); 
                     }
                 }
                 else
@@ -223,4 +211,3 @@ public class OrganizationService
         return rootNodes;
     }
 }
-

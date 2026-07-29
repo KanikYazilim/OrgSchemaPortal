@@ -16,13 +16,19 @@
                     }
                 </div>
             }
+            
+            @if (Node.Children.Any())
+            {
+                <button class="expand-btn" @onclick="ToggleExpand">
+                    @(IsExpanded ? "-" : "+")
+                </button>
+            }
         </div>
     </div>
     
-    @if (Node.Children.Any())
+    @if (Node.Children.Any() && IsExpanded)
     {
-        var layoutClass = Level >= 2 ? "hanging" : "horizontal";
-        <div class="children @layoutClass">
+        <div class="children horizontal">
             @foreach (var child in Node.Children)
             {
                 <OrgNode Node="child" Level="@(Level + 1)" />
@@ -34,4 +40,16 @@
 @code {
     [Parameter] public OrgNodeDto Node { get; set; } = new();
     [Parameter] public int Level { get; set; } = 1;
+    
+    private bool IsExpanded { get; set; }
+
+    protected override void OnInitialized()
+    {
+        IsExpanded = Level <= 2;
+    }
+
+    private void ToggleExpand()
+    {
+        IsExpanded = !IsExpanded;
+    }
 }

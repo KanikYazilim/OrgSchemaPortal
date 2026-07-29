@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrgSchema.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de75855a2273f6647182849021d7c1da48d27915")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35c8bd9845828d958e76c71fa9662c5b027f7893")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrgSchema.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrgSchema.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

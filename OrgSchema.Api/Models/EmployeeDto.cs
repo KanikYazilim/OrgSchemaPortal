@@ -52,6 +52,8 @@ public class HROrganizationDto
     public string PROFESSION { get; set; } = string.Empty;
     public string POSITIONNAME { get; set; } = string.Empty;
     public string MANAGERUSERID { get; set; } = string.Empty;
+    public string? MANAGERSICILNO { get; set; }
     public string COMPANY { get; set; } = string.Empty;
     public string COMPANYNAME { get; set; } = string.Empty;
 }
+

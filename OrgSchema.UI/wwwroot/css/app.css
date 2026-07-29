@@ -249,3 +249,24 @@ html, body {
     font-weight: 600; 
     color: var(--text-main);
 }
+.expand-btn {
+    margin-top: 10px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+.expand-btn:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
