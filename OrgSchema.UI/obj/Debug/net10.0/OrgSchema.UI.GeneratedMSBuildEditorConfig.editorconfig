@@ -33,20 +33,20 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
+[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/Admin.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTm90Rm91bmQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/OrgNode.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT3JnTm9kZS5yYXpvcg==
+[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/OrganizationList.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT3JnYW5pemF0aW9uTGlzdC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhdGhlci5yYXpvcg==
+[C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/Pages/OrgNode.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT3JnTm9kZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/emiralagoz/.gemini/antigravity/scratch/OrgSchemaPortal/OrgSchema.UI/_Imports.razor]

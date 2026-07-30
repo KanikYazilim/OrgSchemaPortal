@@ -80,7 +80,7 @@ public class OrganizationService : IOrgService
 
     private async Task<List<UnitHierarchyOverrideDto>> GetUnitHierarchyOverridesAsync()
     {
-        var query = "SELECT * FROM UnitHierarchyOverrides";
+        var query = "SELECT * FROM Org_UstBirimBakim WHERE Aktif = 1";
         using var connection = new SqlConnection(_connectionString);
         var data = await connection.QueryAsync<UnitHierarchyOverrideDto>(query);
         return data.ToList();
@@ -129,10 +129,10 @@ public class OrganizationService : IOrgService
         {
             if (!string.IsNullOrWhiteSpace(e.ENAME))
             {
-                e.ENAME = e.ENAME.Replace(" İNŞAAT", "")
+                e.ENAME = e.ENAME.Replace(" Ã„Â°NÃ…ÂAAT", "")
                                  .Replace(" PALM", "")
-                                 .Replace(" ÖZKA HUZUR", "")
-                                 .Replace(" ÖZKA", "")
+                                 .Replace(" Ãƒâ€“ZKA HUZUR", "")
+                                 .Replace(" Ãƒâ€“ZKA", "")
                                  .Trim();
             }
         }
@@ -160,11 +160,11 @@ public class OrganizationService : IOrgService
             var overrides = await GetUnitHierarchyOverridesAsync();
             foreach (var over in overrides)
             {
-                if (string.IsNullOrWhiteSpace(over.BirimId) || string.IsNullOrWhiteSpace(over.NewUstBirimId)) continue;
-                var target = orgAgac.FirstOrDefault(o => o.BirimId == over.BirimId);
+                if (over.BirimId <= 0 || over.YeniUstBirimId <= 0) continue;
+                var target = orgAgac.FirstOrDefault(o => o.BirimId == over.BirimId.ToString());
                 if (target != null)
                 {
-                    target.UstBirimId = over.NewUstBirimId;
+                    target.UstBirimId = over.YeniUstBirimId.ToString();
                 }
             }
         } catch { } 
@@ -465,4 +465,92 @@ public class OrganizationService : IOrgService
 
         return rootNodes;
     }
+
+    public async Task<List<HierarchyResultDto>> SearchEmployeeHierarchyAsync(string query)
+    {
+        var allEmployees = await GetFlatEmployeeListAsync();
+        
+        var targetEmployees = allEmployees.Where(e => 
+            e.NameSurname.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+            e.SicilNo.Equals(query, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+        if (!targetEmployees.Any())
+            return new List<HierarchyResultDto>();
+            
+        var results = new List<HierarchyResultDto>();
+        
+        foreach (var target in targetEmployees)
+        {
+            var hierarchy = new HierarchyResultDto
+            {
+                DepartmentName = target.DepartmentName,
+                TargetEmployee = target,
+                Managers = new List<FinalEmployeeDto>(),
+                Subordinates = new List<FinalEmployeeDto>()
+            };
+            
+            target.Relation = "Aranan Kişi";
+
+            // Find subordinates (1 level down)
+            var subordinates = allEmployees.Where(e => e.ManagerSicilNo == target.SicilNo).ToList();
+            foreach(var sub in subordinates) {
+                // clone to avoid modifying shared references
+                var subClone = new FinalEmployeeDto {
+                    SicilNo = sub.SicilNo, NameSurname = sub.NameSurname, Email = sub.Email,
+                    CompanyId = sub.CompanyId, CompanyName = sub.CompanyName,
+                    DepartmentId = sub.DepartmentId, DepartmentName = sub.DepartmentName,
+                    UnitId = sub.UnitId, UnitName = sub.UnitName,
+                    PositionName = sub.PositionName, Profession = sub.Profession,
+                    ManagerSicilNo = sub.ManagerSicilNo, Manager = sub.Manager,
+                    Relation = "Alt Çalışanı"
+                };
+                hierarchy.Subordinates.Add(subClone);
+            }
+            
+            // Find managers (2 levels up)
+            if (!string.IsNullOrWhiteSpace(target.ManagerSicilNo))
+            {
+                var manager1 = allEmployees.FirstOrDefault(e => e.SicilNo == target.ManagerSicilNo);
+                if (manager1 != null)
+                {
+                    var m1Clone = new FinalEmployeeDto {
+                        SicilNo = manager1.SicilNo, NameSurname = manager1.NameSurname, Email = manager1.Email,
+                        CompanyId = manager1.CompanyId, CompanyName = manager1.CompanyName,
+                        DepartmentId = manager1.DepartmentId, DepartmentName = manager1.DepartmentName,
+                        UnitId = manager1.UnitId, UnitName = manager1.UnitName,
+                        PositionName = manager1.PositionName, Profession = manager1.Profession,
+                        ManagerSicilNo = manager1.ManagerSicilNo, Manager = manager1.Manager,
+                        Relation = "1. Yöneticisi"
+                    };
+                    hierarchy.Managers.Add(m1Clone);
+                    
+                    if (!string.IsNullOrWhiteSpace(manager1.ManagerSicilNo))
+                    {
+                        var manager2 = allEmployees.FirstOrDefault(e => e.SicilNo == manager1.ManagerSicilNo);
+                        if (manager2 != null)
+                        {
+                            var m2Clone = new FinalEmployeeDto {
+                                SicilNo = manager2.SicilNo, NameSurname = manager2.NameSurname, Email = manager2.Email,
+                                CompanyId = manager2.CompanyId, CompanyName = manager2.CompanyName,
+                                DepartmentId = manager2.DepartmentId, DepartmentName = manager2.DepartmentName,
+                                UnitId = manager2.UnitId, UnitName = manager2.UnitName,
+                                PositionName = manager2.PositionName, Profession = manager2.Profession,
+                                ManagerSicilNo = manager2.ManagerSicilNo, Manager = manager2.Manager,
+                                Relation = "2. Yöneticisi"
+                            };
+                            // Insert at beginning so order is TopManager -> DirectManager
+                            hierarchy.Managers.Insert(0, m2Clone); 
+                        }
+                    }
+                }
+            }
+            results.Add(hierarchy);
+        }
+        
+        return results;
+    }
 }
+
+
+
+    

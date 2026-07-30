@@ -1,4 +1,4 @@
-namespace OrgSchema.Api.Services;
+﻿namespace OrgSchema.Api.Services;
 using OrgSchema.Api.Models;
 using OrgSchema.Api.Data;
 using Microsoft.EntityFrameworkCore;
@@ -21,11 +21,11 @@ public class OrgService : IOrgService
     {
         var rawData = await GetRealSapDataAsync();
         
-        // Şimdilik Override tablosu ve HiddenOrganization tablosu boş varsayıyoruz, 
-        // veritabanına eklenince buraya entegre edilecek. (O(1) Merge Algoritması)
-        var finalData = rawData; // İleride Merge(rawData, overrides) olacak
+        // Åimdilik Override tablosu ve HiddenOrganization tablosu boÅŸ varsayÄ±yoruz, 
+        // veritabanÄ±na eklenince buraya entegre edilecek. (O(1) Merge AlgoritmasÄ±)
+        var finalData = rawData; // Ä°leride Merge(rawData, overrides) olacak
 
-        // Ağacı İnşa Et
+        // AÄŸacÄ± Ä°nÅŸa Et
         var tree = BuildEnterpriseTree(finalData);
 
         return tree;
@@ -60,7 +60,7 @@ public class OrgService : IOrgService
         using var connection = new SqlConnection(_connectionString);
         var result = await connection.QueryAsync<FinalEmployeeDto>(sql);
         
-        // Tekilleştirme (Sicil No'ya göre)
+        // TekilleÅŸtirme (Sicil No'ya gÃ¶re)
         var distinct = result
             .GroupBy(x => x.SicilNo)
             .Select(g => g.First())
@@ -74,23 +74,23 @@ public class OrgService : IOrgService
         var nodeDictionary = new Dictionary<string, OrgNodeDto>();
         var rootNodes = new List<OrgNodeDto>();
 
-        // 1. Her çalışan için ait olacağı Pozisyon Kutusunun ID'sini belirle
-        // Kutular, bağlı oldukları yöneticinin SicilNo'su ve Pozisyon Adı ile eşsiz hale gelir.
+        // 1. Her Ã§alÄ±ÅŸan iÃ§in ait olacaÄŸÄ± Pozisyon Kutusunun ID'sini belirle
+        // Kutular, baÄŸlÄ± olduklarÄ± yÃ¶neticinin SicilNo'su ve Pozisyon AdÄ± ile eÅŸsiz hale gelir.
         var sicilToBoxId = new Dictionary<string, string>();
         foreach (var emp in allEmployees)
         {
             string managerSicil = string.IsNullOrWhiteSpace(emp.ManagerSicilNo) || emp.ManagerSicilNo == emp.SicilNo ? "00000000" : emp.ManagerSicilNo.Trim();
-            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "Belirtilmemiş" : emp.PositionName.Trim();
+            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "BelirtilmemiÅŸ" : emp.PositionName.Trim();
             
             string boxId = $"{managerSicil}_{posName}";
             sicilToBoxId[emp.SicilNo] = boxId;
         }
 
-        // 2. Pozisyon Kutularını oluştur ve çalışanları içine doldur
+        // 2. Pozisyon KutularÄ±nÄ± oluÅŸtur ve Ã§alÄ±ÅŸanlarÄ± iÃ§ine doldur
         foreach (var emp in allEmployees)
         {
             string boxId = sicilToBoxId[emp.SicilNo];
-            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "Belirtilmemiş" : emp.PositionName.Trim();
+            string posName = string.IsNullOrWhiteSpace(emp.PositionName) ? "BelirtilmemiÅŸ" : emp.PositionName.Trim();
             
             if (!nodeDictionary.ContainsKey(boxId))
             {
@@ -111,29 +111,29 @@ public class OrgService : IOrgService
             });
         }
 
-        // 3. Kutuları Birbirine Bağla (Parent-Child İlişkisi)
+        // 3. KutularÄ± Birbirine BaÄŸla (Parent-Child Ä°liÅŸkisi)
         foreach (var kvp in nodeDictionary)
         {
             var node = kvp.Value;
             
-            // Bu kutudaki herhangi bir çalışanı referans alarak yöneticisini bulalım
+            // Bu kutudaki herhangi bir Ã§alÄ±ÅŸanÄ± referans alarak yÃ¶neticisini bulalÄ±m
             var representativeEmp = node.Employees.First();
             var empData = allEmployees.First(e => e.SicilNo == representativeEmp.SicilNo);
             
             string managerSicil = string.IsNullOrWhiteSpace(empData.ManagerSicilNo) || empData.ManagerSicilNo == empData.SicilNo ? "00000000" : empData.ManagerSicilNo.Trim();
             
-            // Eğer yöneticisi yoksa (00000000) veya yönetici veritabanında bulunamadıysa bu bir ROOT (Kök) düğümdür.
+            // EÄŸer yÃ¶neticisi yoksa (00000000) veya yÃ¶netici veritabanÄ±nda bulunamadÄ±ysa bu bir ROOT (KÃ¶k) dÃ¼ÄŸÃ¼mdÃ¼r.
             if (managerSicil == "00000000" || !sicilToBoxId.ContainsKey(managerSicil))
             {
                 rootNodes.Add(node);
             }
             else
             {
-                // Yöneticinin kutusunu bul
+                // YÃ¶neticinin kutusunu bul
                 string parentBoxId = sicilToBoxId[managerSicil];
                 if (nodeDictionary.TryGetValue(parentBoxId, out var parentNode))
                 {
-                    // Döngüsel referans kontrolü (Kendi kendine bağlanmasını engelle)
+                    // DÃ¶ngÃ¼sel referans kontrolÃ¼ (Kendi kendine baÄŸlanmasÄ±nÄ± engelle)
                     if (parentBoxId != node.Id)
                     {
                         node.ParentId = parentBoxId;
@@ -151,8 +151,15 @@ public class OrgService : IOrgService
             }
         }
 
-        // Her kutu zaten içindeki çalışanlar sayesinde var olduğu için boş kutu oluşma ihtimali SIFIRDIR.
-        // Bu yüzden Prune (Budama) yapmaya gerek yoktur. Dümdüz organik hiyerarşi döner.
+        // Her kutu zaten iÃ§indeki Ã§alÄ±ÅŸanlar sayesinde var olduÄŸu iÃ§in boÅŸ kutu oluÅŸma ihtimali SIFIRDIR.
+        // Bu yÃ¼zden Prune (Budama) yapmaya gerek yoktur. DÃ¼mdÃ¼z organik hiyerarÅŸi dÃ¶ner.
         return rootNodes;
     }
+
+    public Task<List<HierarchyResultDto>> SearchEmployeeHierarchyAsync(string query)
+    {
+        return Task.FromResult(new List<HierarchyResultDto>());
+    }
 }
+
+

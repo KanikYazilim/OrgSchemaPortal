@@ -1,4 +1,4 @@
-namespace OrgSchema.Api.Models;
+﻿namespace OrgSchema.Api.Models;
 
 public enum NodeType { Company, Department, Unit, Position }
 
@@ -9,7 +9,7 @@ public class OrgNodeDto
     public string Name { get; set; } = string.Empty; // Position Name
     public NodeType Type { get; set; }
     
-    // Yalnızca Type == Position olduğunda dolu olacak
+    // YalnÄ±zca Type == Position olduÄŸunda dolu olacak
     public List<EmployeeSummaryDto> Employees { get; set; } = new();
     
     public List<OrgNodeDto> Children { get; set; } = new();
@@ -28,7 +28,7 @@ public class EmployeeSummaryDto
     public string Email { get; set; } = string.Empty;
 }
 
-// Tüm personelin düz (flat) listesi (Kime Danışabilirim ekranı için)
+// TÃ¼m personelin dÃ¼z (flat) listesi (Kime DanÄ±ÅŸabilirim ekranÄ± iÃ§in)
 public class FinalEmployeeDto
 {
     public string SicilNo { get; set; } = string.Empty;
@@ -41,8 +41,10 @@ public class FinalEmployeeDto
     public string UnitId { get; set; } = string.Empty;
     public string UnitName { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
+    public string Profession { get; set; } = string.Empty;
     public string ManagerSicilNo { get; set; } = string.Empty;
     public string Manager { get; set; } = string.Empty;
+    public string Relation { get; set; } = string.Empty; // e.g. "Aranan Kişi", "1. Yöneticisi", "Çalışanı"
 }
 
 public class HROrganizationDto
@@ -63,4 +65,13 @@ public class HROrganizationDto
     public string COMPANYNAME { get; set; } = string.Empty;
     public int IsHidden { get; set; }
     public int SortOrder { get; set; }
+}
+
+
+public class HierarchyResultDto
+{
+    public string DepartmentName { get; set; } = string.Empty;
+    public FinalEmployeeDto TargetEmployee { get; set; } = new();
+    public List<FinalEmployeeDto> Managers { get; set; } = new(); 
+    public List<FinalEmployeeDto> Subordinates { get; set; } = new();
 }

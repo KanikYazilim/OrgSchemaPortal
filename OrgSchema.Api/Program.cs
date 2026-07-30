@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,53 +54,58 @@ app.MapGet("/api/employees/flat", async (OrgSchema.Api.Services.OrganizationServ
 
 // ===== ADMIN ENDPOINTS =====
 
-// Tabloyu oluştur
 app.MapPost("/api/admin/init", async (OrgSchema.Api.Services.AdminService adminService) =>
 {
-    var result = await adminService.EnsureTableAsync();
+    var result = await adminService.EnsureTablesAsync();
     return Results.Ok(new { Status = result });
 });
 
-// Tüm çalışanları listele (override bilgisiyle birlikte)
-app.MapGet("/api/admin/employees", async (OrgSchema.Api.Services.AdminService adminService) =>
-{
-    var employees = await adminService.GetAllEmployeesAsync();
-    return Results.Ok(employees);
-});
+// -- UnitHierarchyOverrides --
 
-// Tüm override'ları getir
-app.MapGet("/api/admin/overrides", async (OrgSchema.Api.Services.AdminService adminService) =>
+app.MapGet("/api/admin/unit-overrides", async (OrgSchema.Api.Services.AdminService adminService) =>
 {
-    var overrides = await adminService.GetOverridesAsync();
+    var overrides = await adminService.GetUnitOverridesAsync();
     return Results.Ok(overrides);
 });
 
-// Override kaydet
-app.MapPost("/api/admin/overrides", async (OrgSchema.Api.Services.UserOverrideRow data, OrgSchema.Api.Services.AdminService adminService) =>
+app.MapPost("/api/admin/unit-overrides", async (OrgSchema.Api.Models.UnitHierarchyOverrideDto data, OrgSchema.Api.Services.AdminService adminService) =>
 {
-    await adminService.SaveOverrideAsync(data);
-    return Results.Ok(new { Status = "Saved", data.USERID });
+    await adminService.SaveUnitOverrideAsync(data);
+    return Results.Ok(new { Status = "Saved", data.BirimId });
 });
 
-// Override sil
-app.MapDelete("/api/admin/overrides/{userId}", async (string userId, OrgSchema.Api.Services.AdminService adminService) =>
+app.MapDelete("/api/admin/unit-overrides/{unitId}", async (int unitId, OrgSchema.Api.Services.AdminService adminService) =>
 {
-    await adminService.DeleteOverrideAsync(userId);
-    return Results.Ok(new { Status = "Deleted", userId });
+    await adminService.DeleteUnitOverrideAsync(unitId);
+    return Results.Ok(new { Status = "Deleted", unitId });
 });
 
-// Yönetici seçenekleri (dropdown için)
-app.MapGet("/api/admin/manager-options", async (OrgSchema.Api.Services.AdminService adminService) =>
+// -- Search Unit (Autocomplete) --
+app.MapGet("/api/admin/search-unit", async (string? q, OrgSchema.Api.Services.AdminService adminService) =>
 {
-    var options = await adminService.GetManagerOptionsAsync();
-    return Results.Ok(options);
+    if (string.IsNullOrWhiteSpace(q) || q.Length < 2) return Results.Ok(new List<OrgSchema.Api.Models.UnitSearchDto>());
+    var results = await adminService.SearchUnitsAsync(q);
+    return Results.Ok(results);
 });
 
-// YK üyelerini KisiKart2'den otomatik override et
-app.MapPost("/api/admin/auto-sync-yk", async (OrgSchema.Api.Services.AdminService adminService) =>
+// -- HiddenDepartments --
+
+app.MapGet("/api/admin/hidden-departments", async (OrgSchema.Api.Services.AdminService adminService) =>
 {
-    var result = await adminService.AutoSyncYkOverridesAsync();
-    return Results.Ok(new { Message = result });
+    var depts = await adminService.GetHiddenDepartmentsAsync();
+    return Results.Ok(depts);
+});
+
+app.MapPost("/api/admin/hidden-departments", async (OrgSchema.Api.Models.HiddenDepartmentDto data, OrgSchema.Api.Services.AdminService adminService) =>
+{
+    await adminService.AddHiddenDepartmentAsync(data);
+    return Results.Ok(new { Status = "Added", data.DepartmentName });
+});
+
+app.MapDelete("/api/admin/hidden-departments/{id}", async (int id, OrgSchema.Api.Services.AdminService adminService) =>
+{
+    await adminService.DeleteHiddenDepartmentAsync(id);
+    return Results.Ok(new { Status = "Deleted", id });
 });
 
 // Diagnostic endpoints
@@ -122,5 +127,15 @@ app.MapGet("/api/diag/kisikart2-schema", async (OrgSchema.Api.Services.Diagnosti
     return Results.Ok(result);
 });
 
+app.MapGet("/api/employees/hierarchy-search", async (string? q, OrgSchema.Api.Services.OrganizationService orgService) =>
+{
+    if (string.IsNullOrWhiteSpace(q)) return Results.Ok(new List<OrgSchema.Api.Models.FinalEmployeeDto>());
+    var results = await orgService.SearchEmployeeHierarchyAsync(q);
+    return Results.Ok(results);
+});
+
 app.Run();
+
+
+
 

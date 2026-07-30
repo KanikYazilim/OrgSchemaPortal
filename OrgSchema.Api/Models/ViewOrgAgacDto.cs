@@ -1,4 +1,4 @@
-namespace OrgSchema.Api.Models;
+﻿namespace OrgSchema.Api.Models;
 
 public class ViewOrgAgacDto
 {
@@ -27,11 +27,4 @@ public class ViewOrgKisiAgacDto
     public string? MANAGERSICILNO { get; set; }
     public string? BIRIMID { get; set; }
     public bool AKTIF { get; set; }
-}
-
-public class UnitHierarchyOverrideDto
-{
-    public string? BirimId { get; set; }
-    public string? NewUstBirimId { get; set; }
-    public string? Note { get; set; }
 }

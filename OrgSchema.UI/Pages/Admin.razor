@@ -1,0 +1,466 @@
+﻿@page "/admin"
+@using OrgSchema.UI.Models
+@inject HttpClient Http
+
+<PageTitle>Admin Paneli</PageTitle>
+
+<style>
+    /* ... keeping previous styles ... */
+    .admin-container {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        min-height: calc(100vh - 60px);
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    .admin-header {
+        font-weight: 800;
+        color: #2d3748;
+        letter-spacing: -0.5px;
+    }
+    .premium-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        animation: fadeIn 0.4s ease-out;
+    }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .nav-pills .nav-link {
+        border-radius: 50px;
+        padding: 10px 24px;
+        font-weight: 600;
+        color: #4a5568;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+        border: 1px solid transparent;
+    }
+    .nav-pills .nav-link:hover {
+        background: rgba(255,255,255,0.5);
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        border: none;
+    }
+    .table-custom {
+        margin-bottom: 0;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-custom thead th {
+        border-bottom: 2px solid #edf2f7;
+        color: #718096;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        font-weight: 700;
+    }
+    .table-custom tbody tr {
+        transition: all 0.2s ease;
+    }
+    .table-custom tbody tr:hover {
+        background-color: #fff;
+        transform: scale(1.005);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    .table-custom td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf2f7;
+        color: #2d3748;
+    }
+    .form-control-custom {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        background: rgba(255,255,255,0.9);
+    }
+    .form-control-custom:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        outline: none;
+        background: #fff;
+    }
+    .btn-gradient {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+    .btn-danger-custom {
+        background: #fc8181;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.4rem 1rem;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .btn-danger-custom:hover {
+        background: #e53e3e;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(229, 62, 62, 0.3);
+    }
+    .badge-id {
+        background: #edf2f7;
+        color: #4a5568;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-family: 'Consolas', monospace;
+        font-size: 0.9em;
+        border: 1px solid #e2e8f0;
+    }
+    .autocomplete-dropdown {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-height: 250px;
+        overflow-y: auto;
+        width: 100%;
+        margin-top: 5px;
+    }
+    .autocomplete-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .autocomplete-item:hover {
+        background-color: #f7fafc;
+    }
+    .autocomplete-wrapper {
+        position: relative;
+    }
+</style>
+
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="admin-header mb-1">Sistem Yönetimi</h2>
+            <p class="text-muted mb-0">Organizasyon şeması kurallarını ve filtrelerini dinamik olarak yönetin.</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "overrides" ? "active" : "")" @onclick='() => SwitchTab("overrides")'>
+                <i class="bi bi-diagram-3-fill me-2"></i> Birim Yönlendirmeleri
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "hidden" ? "active" : "")" @onclick='() => SwitchTab("hidden")'>
+                <i class="bi bi-eye-slash-fill me-2"></i> Gizli Departmanlar
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        @if (ActiveTab == "overrides")
+        {
+            <div class="premium-card">
+                <div class="p-4 border-bottom">
+                    <h5 class="mb-3 fw-bold text-dark">Yeni Kural Ekle</h5>
+                    <form class="row g-3" @onsubmit="AddOverride">
+                        <div class="col-md-3 autocomplete-wrapper">
+                            <label class="form-label small text-muted fw-bold">Orijinal Birim (Kimi?)</label>
+                            <input type="text" class="form-control-custom w-100" placeholder="ID veya İsim yazın..." 
+                                   @bind="SearchTermOriginal" @bind:event="oninput" @onkeyup="() => SearchUnits(true)" @onfocus="() => ShowDropdownOriginal = true" @onblur="() => HideDropdownOriginal()" required />
+                            @if (ShowDropdownOriginal && SearchResultsOriginal.Any())
+                            {
+                                <div class="autocomplete-dropdown">
+                                    @foreach (var res in SearchResultsOriginal)
+                                    {
+                                        <div class="autocomplete-item" @onmousedown="() => SelectUnit(res, true)">
+                                            <strong>@res.BirimId</strong> - @res.Ad
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-3 autocomplete-wrapper">
+                            <label class="form-label small text-muted fw-bold">Hedef Üst Birim (Nereye?)</label>
+                            <input type="text" class="form-control-custom w-100" placeholder="ID veya İsim yazın..." 
+                                   @bind="SearchTermTarget" @bind:event="oninput" @onkeyup="() => SearchUnits(false)" @onfocus="() => ShowDropdownTarget = true" @onblur="() => HideDropdownTarget()" required />
+                            @if (ShowDropdownTarget && SearchResultsTarget.Any())
+                            {
+                                <div class="autocomplete-dropdown">
+                                    @foreach (var res in SearchResultsTarget)
+                                    {
+                                        <div class="autocomplete-item" @onmousedown="() => SelectUnit(res, false)">
+                                            <strong>@res.BirimId</strong> - @res.Ad
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted fw-bold">Açıklama / Notlar</label>
+                            <input type="text" class="form-control-custom w-100" placeholder="Neden?" @bind="NewOverride.Notlar" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end pb-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" @bind="NewOverride.Aktif" id="flexSwitchCheckChecked">
+                                <label class="form-check-label small text-muted fw-bold" for="flexSwitchCheckChecked">Aktif Kural</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn-gradient w-100">Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="p-0">
+                    @if (Overrides == null)
+                    {
+                        <div class="p-5 text-center text-muted">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p>Kurallar yükleniyor...</p>
+                        </div>
+                    }
+                    else if (Overrides.Count == 0)
+                    {
+                        <div class="p-5 text-center text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">Henüz hiç yönlendirme kuralı eklenmemiş.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Orijinal Birim ID</th>
+                                    <th>Yeni Üst Birim ID</th>
+                                    <th>Notlar</th>
+                                    <th>Durum</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ov in Overrides)
+                                {
+                                    <tr>
+                                        <td><span class="badge-id">@ov.BirimId</span></td>
+                                        <td><span class="badge-id">@ov.YeniUstBirimId</span></td>
+                                        <td class="text-muted">@ov.Notlar</td>
+                                        <td>
+                                            @if (ov.Aktif)
+                                            {
+                                                <span class="badge bg-success">Aktif</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Pasif</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn-danger-custom" @onclick="() => DeleteOverride(ov.BirimId)">Sil</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+        else if (ActiveTab == "hidden")
+        {
+            <div class="premium-card">
+                <div class="p-4 border-bottom">
+                    <h5 class="mb-3 fw-bold text-dark">Yeni Departman Gizle</h5>
+                    <form class="row g-3" @onsubmit="AddHiddenDept">
+                        <div class="col-md-9">
+                            <input type="text" class="form-control-custom w-100" placeholder="Gizlenecek Departman Adı (Büyük/küçük harf duyarlıdır)" @bind="NewHiddenDept.DepartmentName" required />
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn-gradient w-100">Listeye Ekle</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="p-0">
+                    @if (HiddenDepartments == null)
+                    {
+                        <div class="p-5 text-center text-muted">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p>Liste yükleniyor...</p>
+                        </div>
+                    }
+                    else if (HiddenDepartments.Count == 0)
+                    {
+                        <div class="p-5 text-center text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">Gizlenen hiçbir departman yok.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Departman Adı</th>
+                                    <th>Eklenme Tarihi</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var dept in HiddenDepartments)
+                                {
+                                    <tr>
+                                        <td class="fw-bold text-dark">@dept.DepartmentName</td>
+                                        <td class="text-muted">@dept.CreatedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td class="text-end">
+                                            <button class="btn-danger-custom" @onclick="() => DeleteHiddenDept(dept.Id)">Görünür Yap</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string ActiveTab = "overrides";
+
+    private List<UnitHierarchyOverrideDto>? Overrides;
+    private UnitHierarchyOverrideDto NewOverride = new() { Aktif = true };
+
+    private List<HiddenDepartmentDto>? HiddenDepartments;
+    private HiddenDepartmentDto NewHiddenDept = new();
+
+    // Autocomplete states
+    private string SearchTermOriginal = "";
+    private string SearchTermTarget = "";
+    private List<UnitSearchDto> SearchResultsOriginal = new();
+    private List<UnitSearchDto> SearchResultsTarget = new();
+    private bool ShowDropdownOriginal = false;
+    private bool ShowDropdownTarget = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private void SwitchTab(string tab)
+    {
+        ActiveTab = tab;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try {
+            Overrides = await Http.GetFromJsonAsync<List<UnitHierarchyOverrideDto>>("/api/admin/unit-overrides");
+            HiddenDepartments = await Http.GetFromJsonAsync<List<HiddenDepartmentDto>>("/api/admin/hidden-departments");
+        } catch { }
+    }
+
+    private async Task SearchUnits(bool isOriginal)
+    {
+        string term = isOriginal ? SearchTermOriginal : SearchTermTarget;
+        if (string.IsNullOrWhiteSpace(term) || term.Length < 2)
+        {
+            if (isOriginal) SearchResultsOriginal.Clear();
+            else SearchResultsTarget.Clear();
+            return;
+        }
+
+        try {
+            var res = await Http.GetFromJsonAsync<List<UnitSearchDto>>($"/api/admin/search-unit?q={Uri.EscapeDataString(term)}");
+            if (res != null)
+            {
+                if (isOriginal) SearchResultsOriginal = res;
+                else SearchResultsTarget = res;
+            }
+        } catch { }
+    }
+
+    private void SelectUnit(UnitSearchDto unit, bool isOriginal)
+    {
+        if (int.TryParse(unit.BirimId, out int parsedId))
+        {
+            if (isOriginal)
+            {
+                NewOverride.BirimId = parsedId;
+                SearchTermOriginal = $"{unit.BirimId} - {unit.Ad}";
+                ShowDropdownOriginal = false;
+            }
+            else
+            {
+                NewOverride.YeniUstBirimId = parsedId;
+                SearchTermTarget = $"{unit.BirimId} - {unit.Ad}";
+                ShowDropdownTarget = false;
+            }
+        }
+    }
+
+    private async Task HideDropdownOriginal()
+    {
+        await Task.Delay(200); // Wait for click event
+        ShowDropdownOriginal = false;
+    }
+
+    private async Task HideDropdownTarget()
+    {
+        await Task.Delay(200); // Wait for click event
+        ShowDropdownTarget = false;
+    }
+
+    private async Task AddOverride()
+    {
+        // Try to parse just in case they typed manually without selecting
+        if (int.TryParse(SearchTermOriginal.Split('-')[0].Trim(), out int bId)) NewOverride.BirimId = bId;
+        if (int.TryParse(SearchTermTarget.Split('-')[0].Trim(), out int yId)) NewOverride.YeniUstBirimId = yId;
+
+        await Http.PostAsJsonAsync("/api/admin/unit-overrides", NewOverride);
+        NewOverride = new() { Aktif = true };
+        SearchTermOriginal = "";
+        SearchTermTarget = "";
+        await LoadDataAsync();
+    }
+
+    private async Task DeleteOverride(int id)
+    {
+        await Http.DeleteAsync($"/api/admin/unit-overrides/{id}");
+        await LoadDataAsync();
+    }
+
+    private async Task AddHiddenDept()
+    {
+        await Http.PostAsJsonAsync("/api/admin/hidden-departments", NewHiddenDept);
+        NewHiddenDept = new();
+        await LoadDataAsync();
+    }
+
+    private async Task DeleteHiddenDept(int id)
+    {
+        await Http.DeleteAsync($"/api/admin/hidden-departments/{id}");
+        await LoadDataAsync();
+    }
+}

@@ -1,0 +1,235 @@
+﻿@page "/organization-list"
+@using OrgSchema.UI.Models
+@inject HttpClient Http
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold bg-clip-text text-transparent bg-gradient-primary">
+            <i class="bi bi-diagram-3-fill me-2"></i>Organizasyon Listesi
+        </h2>
+    </div>
+
+    <div class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+            <h5 class="card-title fw-bold mb-3">Personel Arama</h5>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" placeholder="İsim, soyisim veya sicil no girin..." 
+                       @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+                <button class="btn btn-primary px-4" @onclick="Search">
+                    @if (IsLoading) {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    Ara
+                </button>
+            </div>
+            <small class="text-muted mt-2 d-block">Kişiyi aradığınızda, farklı departmanlardaki tüm görevleri ayrı şemalar halinde listelenir.</small>
+        </div>
+    </div>
+
+    @if (Results != null && Results.Any())
+    {
+        foreach (var item in Results)
+        {
+            <div class="card glass-card border-0 mb-4">
+                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0">
+                    <h5 class="text-primary fw-bold"><i class="bi bi-building me-2"></i>@item.Data.DepartmentName</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column align-items-center">
+                        
+                        @* Managers Section *@
+                        @if (item.Data.Managers != null && item.Data.Managers.Any())
+                        {
+                            @if (!item.ShowManagers)
+                            {
+                                <button class="btn btn-sm btn-outline-primary rounded-pill mb-3" @onclick="() => item.ShowManagers = true">
+                                    <i class="bi bi-chevron-up me-1"></i>Üst Yöneticileri Göster
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-items-center mb-3 w-100">
+                                    @for (int i = 0; i < item.Data.Managers.Count; i++)
+                                    {
+                                        var m = item.Data.Managers[i];
+                                        <div class="org-node-card manager-node p-3 text-center">
+                                            <div class="avatar-circle-sm bg-warning text-dark mx-auto mb-2">
+                                                @(GetInitials(m.NameSurname))
+                                            </div>
+                                            <div class="fw-bold text-dark">@m.NameSurname</div>
+                                            <div class="small text-muted">@m.PositionName</div>
+                                        </div>
+                                        
+                                        <div class="org-connector my-2">
+                                            <i class="bi bi-arrow-down fs-4 text-muted"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <button class="btn btn-sm btn-link text-muted mb-3" @onclick="() => item.ShowManagers = false">
+                                    <i class="bi bi-chevron-up me-1"></i>Gizle
+                                </button>
+                            }
+                        }
+
+                        @* Target Employee *@
+                        <div class="org-node-card target-node p-4 text-center shadow-sm">
+                            <div class="avatar-circle bg-primary text-white mx-auto mb-3">
+                                @(GetInitials(item.Data.TargetEmployee.NameSurname))
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">@item.Data.TargetEmployee.NameSurname</h5>
+                            <div class="text-primary fw-semibold mb-1">@item.Data.TargetEmployee.PositionName</div>
+                            @if (!string.IsNullOrWhiteSpace(item.Data.TargetEmployee.Profession))
+                            {
+                                <div class="small text-muted">@item.Data.TargetEmployee.Profession</div>
+                            }
+                        </div>
+
+                        @* Subordinates Section *@
+                        @if (item.Data.Subordinates != null && item.Data.Subordinates.Any())
+                        {
+                            @if (!item.ShowSubordinates)
+                            {
+                                <button class="btn btn-sm btn-outline-success rounded-pill mt-4" @onclick="() => item.ShowSubordinates = true">
+                                    <i class="bi bi-chevron-down me-1"></i>Alt Çalışanları Göster (@item.Data.Subordinates.Count)
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-link text-muted mt-3 mb-2" @onclick="() => item.ShowSubordinates = false">
+                                    <i class="bi bi-chevron-up me-1"></i>Gizle
+                                </button>
+                                <div class="org-connector my-2">
+                                    <i class="bi bi-arrow-down fs-4 text-muted"></i>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap justify-content-center gap-3 mt-2 w-100">
+                                    @foreach (var sub in item.Data.Subordinates)
+                                    {
+                                        <div class="org-node-card subordinate-node p-3 text-center">
+                                            <div class="avatar-circle-sm bg-success text-white mx-auto mb-2">
+                                                @(GetInitials(sub.NameSurname))
+                                            </div>
+                                            <div class="fw-bold text-dark">@sub.NameSurname</div>
+                                            <div class="small text-muted">@sub.PositionName</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else if (HasSearched && !IsLoading)
+    {
+        <div class="alert alert-info glass-card border-0 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+            <div>Arama kriterinize uygun personel bulunamadı.</div>
+        </div>
+    }
+</div>
+
+<style>
+    .org-node-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 1rem;
+        transition: transform 0.2s;
+        min-width: 200px;
+        max-width: 250px;
+    }
+    .org-node-card:hover {
+        transform: translateY(-2px);
+    }
+    .target-node {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid var(--bs-primary);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        z-index: 2;
+    }
+    .manager-node {
+        border-left: 3px solid var(--bs-warning);
+    }
+    .subordinate-node {
+        border-top: 3px solid var(--bs-success);
+        flex: 0 1 auto;
+    }
+    .org-connector {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 30px;
+    }
+    .avatar-circle-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1rem;
+    }
+</style>
+
+@code {
+    private string SearchQuery = "";
+    private bool IsLoading = false;
+    private bool HasSearched = false;
+    
+    private class HierarchyUiNode 
+    {
+        public HierarchyResultDto Data { get; set; } = new();
+        public bool ShowManagers { get; set; } = false;
+        public bool ShowSubordinates { get; set; } = false;
+    }
+
+    private List<HierarchyUiNode> Results = new();
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Search();
+        }
+    }
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery) || SearchQuery.Length < 3) return;
+
+        IsLoading = true;
+        HasSearched = true;
+        Results.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<HierarchyResultDto>>("http://localhost:5009/api/employees/hierarchy-search?q=" + Uri.EscapeDataString(SearchQuery));
+            if (response != null)
+            {
+                Results = response.Select(r => new HierarchyUiNode { Data = r }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Search error: " + ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "??";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
+        return (parts[0].Substring(0, 1) + parts[^1].Substring(0, 1)).ToUpper();
+    }
+}
