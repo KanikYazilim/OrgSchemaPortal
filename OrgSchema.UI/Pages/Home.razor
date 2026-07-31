@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using System.Net.Http
 @using System.Net.Http.Json
 @using OrgSchema.UI.Models
@@ -300,7 +300,7 @@ else
     private IEnumerable<FinalEmployeeDto> GetPeopleInUnit(string firm, string dept, string unit)
     {
         return allEmployees!.Where(x => x.CompanyName == firm && x.DepartmentName == dept && x.UnitName == unit)
-                            .OrderByDescending(x => x.PositionName.Contains("MÃ¼dÃ¼r") || x.PositionName.Contains("YÃ¶netici"))
+                            .OrderByDescending(x => x.PositionName != null && (x.PositionName.Contains("Müdür") || x.PositionName.Contains("Yönetici")))
                             .ThenBy(x => x.NameSurname);
     }
 

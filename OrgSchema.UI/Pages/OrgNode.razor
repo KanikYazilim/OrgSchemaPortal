@@ -11,7 +11,7 @@
             
             <span class="title">@Node.Name</span>
             
-            @if (Node.Employees.Any())
+            @if (Node.Employees != null && Node.Employees.Any())
             {
                 <div class="employee-list">
                     @foreach (var emp in Node.Employees)
@@ -23,7 +23,7 @@
                 </div>
             }
             
-            @if (Node.Children.Any())
+            @if (Node.Children != null && Node.Children.Any())
             {
                 <button class="expand-btn" @onclick="ToggleExpand">
                     @(IsExpanded ? "-" : "+")
@@ -37,7 +37,7 @@
         </div>
     </div>
     
-    @if (Node.Children.Any() && IsExpanded)
+    @if (Node.Children != null && Node.Children.Any() && IsExpanded)
     {
         <div class="children horizontal">
             @foreach (var child in Node.Children)
