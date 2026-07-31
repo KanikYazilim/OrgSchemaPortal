@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -86,6 +86,18 @@ public class OrganizationService : IOrgService
         return data.ToList();
     }
 
+    private async Task<List<string>> GetHiddenKeywordsAsync()
+    {
+        try {
+            var query = "SELECT DepartmentName FROM HiddenDepartments";
+            using var connection = new SqlConnection(_connectionString);
+            var data = await connection.QueryAsync<string>(query);
+            return data.ToList();
+        } catch {
+            return new List<string>();
+        }
+    }
+
     private string FormatPositionName(string positionName)
     {
         if (string.IsNullOrWhiteSpace(positionName)) return "Ekip \u00DCyeleri";
@@ -115,24 +127,24 @@ public class OrganizationService : IOrgService
 
     private Dictionary<string, string> _sicilNoMapping = new();
 
-    private List<HROrganizationDto> FilterAndDeduplicate(List<HROrganizationDto> rawEmployees)
+    private List<HROrganizationDto> FilterAndDeduplicate(List<HROrganizationDto> rawEmployees, List<string> hiddenKeywords)
     {
-        var hiddenDepts = _configuration.GetSection("HiddenDepartments").Get<List<string>>() ?? new List<string>();
-        
         _sicilNoMapping.Clear();
 
-        var filtered = rawEmployees.Where(e => !hiddenDepts.Any(hd => 
-            (e.DEPARTMENTNAME != null && e.DEPARTMENTNAME.Contains(hd, StringComparison.OrdinalIgnoreCase))
+        var filtered = rawEmployees.Where(e => !hiddenKeywords.Any(hd => 
+            (e.DEPARTMENTNAME != null && e.DEPARTMENTNAME.Contains(hd, StringComparison.OrdinalIgnoreCase)) ||
+            (e.POSITIONNAME != null && e.POSITIONNAME.Contains(hd, StringComparison.OrdinalIgnoreCase)) ||
+            (e.PROFESSION != null && e.PROFESSION.Contains(hd, StringComparison.OrdinalIgnoreCase))
         )).ToList();
 
         foreach (var e in filtered)
         {
             if (!string.IsNullOrWhiteSpace(e.ENAME))
             {
-                e.ENAME = e.ENAME.Replace(" Ã„Â°NÃ…ÂAAT", "")
+                e.ENAME = e.ENAME.Replace(" İNŞAAT", "")
                                  .Replace(" PALM", "")
-                                 .Replace(" Ãƒâ€“ZKA HUZUR", "")
-                                 .Replace(" Ãƒâ€“ZKA", "")
+                                 .Replace(" ÖZKA HUZUR", "")
+                                 .Replace(" ÖZKA", "")
                                  .Trim();
             }
         }
@@ -155,7 +167,10 @@ public class OrganizationService : IOrgService
         var orgAgac = await GetViewOrgAgacAsync();
         var birimYoneticileri = await GetViewOrgBirimYoneticiAsync();
         var kisiAgac = await GetViewOrgKisiAgacAsync();
+        var hiddenKeywords = await GetHiddenKeywordsAsync();
         
+        kisiAgac = kisiAgac.Where(k => !hiddenKeywords.Any(hd => k.POZISYONADI != null && k.POZISYONADI.Contains(hd, StringComparison.OrdinalIgnoreCase))).ToList();
+
         try {
             var overrides = await GetUnitHierarchyOverridesAsync();
             foreach (var over in overrides)
@@ -169,7 +184,7 @@ public class OrganizationService : IOrgService
             }
         } catch { } 
 
-        var tree = BuildPositionTree(orgAgac, birimYoneticileri, kisiAgac);
+        var tree = BuildPositionTree(orgAgac, birimYoneticileri, kisiAgac, hiddenKeywords);
         
         PruneEmptyNodes(tree);
 
@@ -179,7 +194,8 @@ public class OrganizationService : IOrgService
     public async Task<List<FinalEmployeeDto>> GetFlatEmployeeListAsync()
     {
         var rawEmployees = await GetRawOrganizationAsync();
-        var allEmployees = FilterAndDeduplicate(rawEmployees);
+        var hiddenKeywords = await GetHiddenKeywordsAsync();
+        var allEmployees = FilterAndDeduplicate(rawEmployees, hiddenKeywords);
         
         var finalList = allEmployees.Select(emp => new FinalEmployeeDto
         {
@@ -246,12 +262,11 @@ public class OrganizationService : IOrgService
     private List<OrgNodeDto> BuildPositionTree(
         List<ViewOrgAgacDto> orgAgac, 
         List<ViewOrgBirimYoneticiDto> birimYoneticileri, 
-        List<ViewOrgKisiAgacDto> kisiAgac)
+        List<ViewOrgKisiAgacDto> kisiAgac,
+        List<string> hiddenKeywords)
     {
         var nodeDictionary = new Dictionary<string, OrgNodeDto>();
         var rootNodes = new List<OrgNodeDto>();
-
-        var hiddenDepts = _configuration.GetSection("HiddenDepartments").Get<List<string>>() ?? new List<string>();
 
         foreach (var e in kisiAgac)
         {
@@ -278,7 +293,7 @@ public class OrganizationService : IOrgService
         nodeDictionary[ultimateRootId] = ultimateRootNode;
         rootNodes.Add(ultimateRootNode);
 
-        var validOrgAgac = orgAgac.Where(o => o.BirimId != ultimateRootId && !hiddenDepts.Any(hd => o.Ad != null && o.Ad.Contains(hd, StringComparison.OrdinalIgnoreCase))).ToList();
+        var validOrgAgac = orgAgac.Where(o => o.BirimId != ultimateRootId && !hiddenKeywords.Any(hd => o.Ad != null && o.Ad.Contains(hd, StringComparison.OrdinalIgnoreCase))).ToList();
 
         foreach (var org in validOrgAgac)
         {

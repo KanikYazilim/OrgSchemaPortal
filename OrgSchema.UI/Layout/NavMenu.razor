@@ -1,6 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">OrgSchema.UI</a>
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <i class="bi bi-diagram-3-fill me-2 fs-4 text-warning"></i>
+            <span class="fw-bold">Kurumsal Portal</span>
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -8,30 +11,22 @@
 </div>
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+    <nav class="nav flex-column mt-4">
+        <div class="nav-item px-3 mb-2">
+            <NavLink class="nav-link custom-nav-link" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill me-3 fs-5"></i> Ana Sayfa
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+        
+        <div class="nav-item px-3 mb-2">
+            <NavLink class="nav-link custom-nav-link" href="organization-list">
+                <i class="bi bi-people-fill me-3 fs-5"></i> Personel Listesi
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin">
-                <span class="bi bi-gear-fill" aria-hidden="true"></span> Admin
-            </NavLink>
-        </div>
-            <div class="nav-item px-3">
-            <NavLink class="nav-link" href="organization-list">
-                <span class="bi bi-diagram-3-fill" aria-hidden="true"></span> Org. Listesi
+        
+        <div class="nav-item px-3 mt-auto mb-2">
+            <NavLink class="nav-link custom-nav-link" href="admin">
+                <i class="bi bi-gear-fill me-3 fs-5"></i> Yönetim Paneli
             </NavLink>
         </div>
     </nav>
@@ -47,4 +42,3 @@
         collapseNavMenu = !collapseNavMenu;
     }
 }
-

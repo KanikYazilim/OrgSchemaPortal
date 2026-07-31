@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +15,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
     {
-        policy.WithOrigins("https://localhost:7280", "http://localhost:5062") // Real ports from launchSettings
+        policy.WithOrigins("https://localhost:7301", "http://localhost:5162") // Real ports from launchSettings
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -26,7 +26,7 @@ builder.Services.AddScoped<OrgSchema.Api.Services.DiagnosticService>();
 builder.Services.AddScoped<OrgSchema.Api.Services.AdminService>();
 
 var app = builder.Build();
-
+app.UseWebAssemblyDebugging();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -34,6 +34,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowBlazor");
+
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
 
 // Default test endpoint
 app.MapGet("/api/health", () => Results.Ok(new { Status = "Healthy", Message = "OrgSchema API is running" }));
@@ -133,6 +136,7 @@ app.MapGet("/api/employees/hierarchy-search", async (string? q, OrgSchema.Api.Se
     var results = await orgService.SearchEmployeeHierarchyAsync(q);
     return Results.Ok(results);
 });
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "xEJTVPv8E4o=",
+  "dgSpecHash": "D79EJnnz1M0=",
   "success": true,
   "projectFilePath": "C:\\Users\\emiralagoz\\.gemini\\antigravity\\scratch\\OrgSchemaPortal\\OrgSchema.Api\\OrgSchema.Api.csproj",
   "expectedPackageFiles": [
@@ -8,6 +8,8 @@
     "C:\\Users\\emiralagoz\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\dapper\\2.1.79\\dapper.2.1.79.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.aspnetcore.components.webassembly\\10.0.10\\microsoft.aspnetcore.components.webassembly.10.0.10.nupkg.sha512",
+    "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.aspnetcore.components.webassembly.server\\10.0.10\\microsoft.aspnetcore.components.webassembly.server.10.0.10.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.10\\microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\8.0.0\\microsoft.bcl.asyncinterfaces.8.0.0.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.bcl.cryptography\\9.0.4\\microsoft.bcl.cryptography.9.0.4.nupkg.sha512",
@@ -35,6 +37,7 @@
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.identitymodel.protocols\\7.7.1\\microsoft.identitymodel.protocols.7.7.1.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\7.7.1\\microsoft.identitymodel.protocols.openidconnect.7.7.1.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.identitymodel.tokens\\7.7.1\\microsoft.identitymodel.tokens.7.7.1.nupkg.sha512",
+    "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.jsinterop.webassembly\\10.0.10\\microsoft.jsinterop.webassembly.10.0.10.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\emiralagoz\\.nuget\\packages\\microsoft.visualstudio.solutionpersistence\\1.0.52\\microsoft.visualstudio.solutionpersistence.1.0.52.nupkg.sha512",
@@ -58,7 +61,7 @@
     {
       "code": "NU1903",
       "level": "Warning",
-      "message": "'Microsoft.OpenApi' 2.0.0 paketinde önem derecesi yüksek olan bilinen bir https://github.com/advisories/GHSA-v5pm-xwqc-g5wc güvenlik açığı var",
+      "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
       "projectPath": "C:\\Users\\emiralagoz\\.gemini\\antigravity\\scratch\\OrgSchemaPortal\\OrgSchema.Api\\OrgSchema.Api.csproj",
       "warningLevel": 1,
       "filePath": "C:\\Users\\emiralagoz\\.gemini\\antigravity\\scratch\\OrgSchemaPortal\\OrgSchema.Api\\OrgSchema.Api.csproj",

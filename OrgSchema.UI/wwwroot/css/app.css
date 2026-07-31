@@ -26,25 +26,26 @@ html, body {
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; /* Sayfanın sağa kaymasını (horizontal scroll) engeller */
 }
 
-/* --- TAB MEN�S� --- */
+/* --- TAB MENÜSÜ --- */
 .header-tabs { display: flex; justify-content: center; gap: 1.5rem; padding: 2rem 1rem; position: relative; z-index: 10; }
 .tab { padding: 0.8rem 2rem; font-size: 1.1rem; font-weight: 600; color: var(--text-muted); background: white; border-radius: var(--radius-pill); cursor: pointer; transition: var(--transition); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 0.75rem; border: 2px solid transparent; }
 .tab:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); color: var(--primary); }
 .tab.active { background: var(--primary-gradient); color: white; box-shadow: 0 8px 20px rgba(81, 26, 102, 0.3); }
 
-/* --- ORTAK BA�LIK --- */
+/* --- ORTAK BAŞLIK --- */
 .header-container { text-align: center; margin-bottom: 2rem; }
 .header-container h1 { font-size: 2.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; }
 .purple-text { color: var(--primary); }
 .hint { color: var(--text-muted); font-size: 0.95rem; font-weight: 500; }
 
-/* --- ORGAN�ZASYON �EMASI K�K --- */
+/* --- ORGANİZASYON ŞEMASI KÖK --- */
 .org-chart-wrapper {
     width: 100%;
     height: calc(100vh - 200px);
-    overflow: auto; /* Allow native scrolling too */
+    overflow: hidden; /* Scrollbarları gizle, zoompan JS kullanılıyor */
     background: #f8f9fa; 
     border-radius: var(--radius-lg);
     border: 1px solid rgba(0,0,0,0.1);
@@ -302,7 +303,7 @@ html, body {
     opacity: 1;
 }
 
-/* Personel listesi açılıp kapanma stili */
+/* Personel listesi aÃ§Ä±lÄ±p kapanma stili */
 .employees-toggle {
     display: inline-flex;
     align-items: center;
@@ -330,4 +331,23 @@ html, body {
 .toggle-icon {
     font-size: 0.7rem;
     transition: transform 0.2s;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
 }

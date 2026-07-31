@@ -21,11 +21,11 @@ else if (originalOrgNodes == null || allEmployees == null)
 }
 else
 {
-    <!-- ORGANÄ°ZASYON ÅzEMASI SEKMESÄ° -->
+    <!-- ORGANİZASYON ŞEMASI SEKMESİ -->
     <div style="display: @(activeTab == "OrgChart" ? "block" : "none")">
         <div class="header-container">
-            <h1><span class="purple-text">Kurumsal</span> Organizasyon ÅzemasÄ±</h1>
-            <p class="hint">?? ÅzemayÄ± farenizle sÃ¼rÃ¼kleyebilir ve tekerlek (mouse wheel) ile istediÄŸiniz bÃ¶lgeye yakÄ±nlaÅŸabilirsiniz.</p>
+            <h1><span class="purple-text">Kurumsal</span> Organizasyon Şeması</h1>
+            <p class="hint">💡 Şemayı farenizle sürükleyebilir ve tekerlek (mouse wheel) ile istediğiniz bölgeye yakınlaşabilirsiniz.</p>
             @if(isFocusedMode)
             {
                 <button class="btn btn-secondary mt-2" @onclick="ResetFocus">Tüm Şemayı Göster</button>
@@ -42,7 +42,7 @@ else
         </div>
     </div>
 
-    <!-- KÄ°ME DANIÅzABÄ°LÄ°RÄ°M SEKMESÄ° -->
+    <!-- KİME DANIŞABİLİRİM SEKMESİ -->
     <div style="display: @(activeTab == "Consult" ? "block" : "none")">
         
         <div class="consult-columns-wrapper">
@@ -130,7 +130,7 @@ else
             statusMessage = "Şema verisi çekiliyor (GET /api/orgchart)...";
             StateHasChanged();
             
-            var req1 = await Http.GetAsync("http://localhost:5009/api/orgchart");
+            var req1 = await Http.GetAsync("/api/orgchart");
             if(!req1.IsSuccessStatusCode) {
                 errorMessage = $"OrgChart API hatası: {req1.StatusCode}";
                 return;
@@ -141,7 +141,7 @@ else
             statusMessage = "Düz liste verisi çekiliyor (GET /api/employees/flat)...";
             StateHasChanged();
 
-            var req2 = await Http.GetAsync("http://localhost:5009/api/employees/flat");
+            var req2 = await Http.GetAsync("/api/employees/flat");
             if(!req2.IsSuccessStatusCode) {
                 errorMessage = $"Employees API hatası: {req2.StatusCode}";
                 return;

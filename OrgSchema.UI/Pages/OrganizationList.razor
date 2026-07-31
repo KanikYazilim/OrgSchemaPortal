@@ -23,7 +23,7 @@
                     Ara
                 </button>
             </div>
-            <small class="text-muted mt-2 d-block">Kişiyi aradığınızda, farklı departmanlardaki tüm görevleri ayrı şemalar halinde listelenir.</small>
+            <small class="text-muted mt-2 d-block">Kişiyi aradığınızda, farklı departmanlardaki tüm görevleri ayrı şemalar halinde listelenir. Diğer kişilerin yöneticilerini veya alt çalışanlarını görmek için kartlarına tıklayabilirsiniz.</small>
         </div>
     </div>
 
@@ -31,8 +31,8 @@
     {
         foreach (var item in Results)
         {
-            <div class="card glass-card border-0 mb-4">
-                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0">
+            <div class="card glass-card border-0 mb-5 shadow-sm">
+                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 text-center">
                     <h5 class="text-primary fw-bold"><i class="bi bi-building me-2"></i>@item.Data.DepartmentName</h5>
                 </div>
                 <div class="card-body p-4">
@@ -41,39 +41,27 @@
                         @* Managers Section *@
                         @if (item.Data.Managers != null && item.Data.Managers.Any())
                         {
-                            @if (!item.ShowManagers)
-                            {
-                                <button class="btn btn-sm btn-outline-primary rounded-pill mb-3" @onclick="() => item.ShowManagers = true">
-                                    <i class="bi bi-chevron-up me-1"></i>Üst Yöneticileri Göster
-                                </button>
-                            }
-                            else
-                            {
-                                <div class="d-flex flex-column align-items-center mb-3 w-100">
-                                    @for (int i = 0; i < item.Data.Managers.Count; i++)
-                                    {
-                                        var m = item.Data.Managers[i];
-                                        <div class="org-node-card manager-node p-3 text-center">
-                                            <div class="avatar-circle-sm bg-warning text-dark mx-auto mb-2">
-                                                @(GetInitials(m.NameSurname))
-                                            </div>
-                                            <div class="fw-bold text-dark">@m.NameSurname</div>
-                                            <div class="small text-muted">@m.PositionName</div>
+                            <div class="d-flex flex-column align-items-center mb-1 w-100">
+                                @for (int i = 0; i < item.Data.Managers.Count; i++)
+                                {
+                                    var m = item.Data.Managers[i];
+                                    <div class="org-node-card clickable manager-node p-3 text-center" @onclick="() => SearchBySicilNo(m.SicilNo)">
+                                        <div class="avatar-circle-sm bg-warning text-dark mx-auto mb-2">
+                                            @(GetInitials(m.NameSurname))
                                         </div>
-                                        
-                                        <div class="org-connector my-2">
-                                            <i class="bi bi-arrow-down fs-4 text-muted"></i>
-                                        </div>
-                                    }
-                                </div>
-                                <button class="btn btn-sm btn-link text-muted mb-3" @onclick="() => item.ShowManagers = false">
-                                    <i class="bi bi-chevron-up me-1"></i>Gizle
-                                </button>
-                            }
+                                        <div class="fw-bold text-dark">@m.NameSurname</div>
+                                        <div class="small text-muted">@m.PositionName</div>
+                                    </div>
+                                    
+                                    <div class="org-connector my-2">
+                                        <i class="bi bi-arrow-down fs-4 text-muted"></i>
+                                    </div>
+                                }
+                            </div>
                         }
 
                         @* Target Employee *@
-                        <div class="org-node-card target-node p-4 text-center shadow-sm">
+                        <div class="org-node-card target-node p-4 text-center shadow">
                             <div class="avatar-circle bg-primary text-white mx-auto mb-3">
                                 @(GetInitials(item.Data.TargetEmployee.NameSurname))
                             </div>
@@ -88,34 +76,22 @@
                         @* Subordinates Section *@
                         @if (item.Data.Subordinates != null && item.Data.Subordinates.Any())
                         {
-                            @if (!item.ShowSubordinates)
-                            {
-                                <button class="btn btn-sm btn-outline-success rounded-pill mt-4" @onclick="() => item.ShowSubordinates = true">
-                                    <i class="bi bi-chevron-down me-1"></i>Alt Çalışanları Göster (@item.Data.Subordinates.Count)
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-link text-muted mt-3 mb-2" @onclick="() => item.ShowSubordinates = false">
-                                    <i class="bi bi-chevron-up me-1"></i>Gizle
-                                </button>
-                                <div class="org-connector my-2">
-                                    <i class="bi bi-arrow-down fs-4 text-muted"></i>
-                                </div>
-                                
-                                <div class="d-flex flex-wrap justify-content-center gap-3 mt-2 w-100">
-                                    @foreach (var sub in item.Data.Subordinates)
-                                    {
-                                        <div class="org-node-card subordinate-node p-3 text-center">
-                                            <div class="avatar-circle-sm bg-success text-white mx-auto mb-2">
-                                                @(GetInitials(sub.NameSurname))
-                                            </div>
-                                            <div class="fw-bold text-dark">@sub.NameSurname</div>
-                                            <div class="small text-muted">@sub.PositionName</div>
+                            <div class="org-connector my-2">
+                                <i class="bi bi-arrow-down fs-4 text-muted"></i>
+                            </div>
+                            
+                            <div class="d-flex flex-wrap justify-content-center gap-4 mt-2 w-100">
+                                @foreach (var sub in item.Data.Subordinates)
+                                {
+                                    <div class="org-node-card clickable subordinate-node p-3 text-center" @onclick="() => SearchBySicilNo(sub.SicilNo)">
+                                        <div class="avatar-circle-sm bg-success text-white mx-auto mb-2">
+                                            @(GetInitials(sub.NameSurname))
                                         </div>
-                                    }
-                                </div>
-                            }
+                                        <div class="fw-bold text-dark">@sub.NameSurname</div>
+                                        <div class="small text-muted">@sub.PositionName</div>
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
                 </div>
@@ -137,41 +113,45 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 1rem;
-        transition: transform 0.2s;
-        min-width: 200px;
-        max-width: 250px;
+        transition: all 0.3s ease;
+        min-width: 220px;
+        max-width: 280px;
     }
-    .org-node-card:hover {
-        transform: translateY(-2px);
+    .org-node-card.clickable {
+        cursor: pointer;
+    }
+    .org-node-card.clickable:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.95);
     }
     .target-node {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         border: 2px solid var(--bs-primary);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         z-index: 2;
     }
     .manager-node {
-        border-left: 3px solid var(--bs-warning);
+        border-left: 4px solid var(--bs-warning);
     }
     .subordinate-node {
-        border-top: 3px solid var(--bs-success);
+        border-top: 4px solid var(--bs-success);
         flex: 0 1 auto;
     }
     .org-connector {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 30px;
+        height: 35px;
     }
     .avatar-circle-sm {
-        width: 40px;
-        height: 40px;
+        width: 45px;
+        height: 45px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 </style>
 
@@ -183,8 +163,6 @@
     private class HierarchyUiNode 
     {
         public HierarchyResultDto Data { get; set; } = new();
-        public bool ShowManagers { get; set; } = false;
-        public bool ShowSubordinates { get; set; } = false;
     }
 
     private List<HierarchyUiNode> Results = new();
@@ -195,6 +173,12 @@
         {
             await Search();
         }
+    }
+
+    private async Task SearchBySicilNo(string sicilNo)
+    {
+        SearchQuery = sicilNo;
+        await Search();
     }
 
     private async Task Search()
@@ -208,7 +192,7 @@
 
         try
         {
-            var response = await Http.GetFromJsonAsync<List<HierarchyResultDto>>("http://localhost:5009/api/employees/hierarchy-search?q=" + Uri.EscapeDataString(SearchQuery));
+            var response = await Http.GetFromJsonAsync<List<HierarchyResultDto>>("/api/employees/hierarchy-search?q=" + Uri.EscapeDataString(SearchQuery));
             if (response != null)
             {
                 Results = response.Select(r => new HierarchyUiNode { Data = r }).ToList();
